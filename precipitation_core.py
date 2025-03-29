@@ -26,7 +26,7 @@ import matplotlib.colors as colors
 # import rasterio
 # from rasterio.plot import show
 # import re
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 # from dateutil.relativedelta import relativedelta
 # import pysal
 # from mpl_toolkits.mplot3d import Axes3D
@@ -190,25 +190,77 @@ def dic_to_KML(dictionary_name,save_path): #Exporting dictionary to KML file
     # Save the KML file
     kml.save(save_path) 
 
+def core_station_data(folder_path = str):
+    station_list = initial_charge(data_directory)
+    # Creation of a dictionary that contains Station objects with initially metadata from Ana
+    dummy_dict = {}
+    for i in station_list:  # Look for the images
+        dummy_dict[i] = Station(i,data_directory)
+
+    # Save entire dictionary to a kml file
+    save_path=r"C:\Users\jvila\Desktop\Andean_project\final_stations_locations.kml"
+    dic_to_KML(dummy_dict, save_path)  
+    return dummy_dict
+
+def dict_data_filtered(data_dict: dict, years: int = 10):
+    """
+    Filters data along GPM range based on a given number of years.
+
+    Args:
+        data_dict (dict): Dictionary containing station data with timestamps.
+        years (int): Number of years to calculate the GPM range.
+        start_date (str): Starting date for GPM filtering.
+
+    Returns:
+        list: Filtered keys that meet the GPM range criteria.
+    GPM data starts from '2000-01-01'
+
+    """
+    # Function to calculate the date key
+    def date_key_forgpm( years: int) -> str:
+        start_gpm_date = datetime.strptime('2000-01-01', '%Y-%m-%d')
+        final_date = start_gpm_date.replace(year=start_gpm_date.year + years)
+        return final_date.strftime('%Y-%m-%d')
+    
+    # Calculate the final date based on the given years
+    final_date = date_key_forgpm(years)
+
+    # Function to filter keys based on timestamp
+    def filter_keys(data_dict: dict, timestamp_min=final_date) -> list:
+        filtered_keys = [
+            key for key, df in data_dict.items()
+            if (df.data.index > pd.Timestamp(timestamp_min)).any()
+        ]
+        print(f"Number of stations within the range > {timestamp_min} are: {len(filtered_keys)}")
+        return filtered_keys
+
+    # Apply filtering and return the results
+    filter_keys = filter_keys(data_dict)        
+    
+    # Create a new dictionary according to the filtered keys selected 
+    final_filtered_dict = {
+        key: data_dict[key] for key in filter_keys  if key in data_dict}
+    
+    return final_filtered_dict
 # =============================================================================
 # Command execution
 # =============================================================================
 data_directory=os.path.join(r'C:\Users\jvila\Desktop\Andean_project\data').replace(os.sep, '/')
 
-station_list = initial_charge(data_directory)
+stations = core_station_data(data_directory) #Set the folder where the ANA data is
+final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2000
+        
+# Save selected stations to a kml file
+save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
+dic_to_KML(final_data, save_path)         
+        
 
-# Creation of a dictionary that contains Station objects with initially metadata from Ana
-dummy_dict = {}
-for i in station_list:  # Look for the images
-    dummy_dict[i] = Station(i,data_directory)
 
-dummy_dict[station_list[0]].plot_ana() # to plot all the data
-station_monthly_sum(dummy_dict[station_list[0]].data) # to sum monthly data
-dummy_comparison(dummy_dict[station_list[0]],dummy_dict[station_list[1]]) # to compare dataframes
-
-# Save entire dictionary to a kml file
-save_path=r"C:\Users\jvila\Desktop\Andean_project\final_stations_locations.kml"
-dic_to_KML(dummy_dict, save_path)        
+# =============================================================================
+# Playing yard
+# dummy_dict[station_list[0]].plot_ana() # to plot all the data
+# station_monthly_sum(dummy_dict[station_list[0]].data) # to sum monthly data
+# dummy_comparison(dummy_dict[station_list[0]],dummy_dict[station_list[1]]) # to compare dataframes
 
 # for name in station_list: #To plot the yearly sum for each station
 #     plt.figure()
@@ -217,28 +269,4 @@ dic_to_KML(dummy_dict, save_path)
 #     plt.legend()
 #     plt.title(f"Precipitation for {name}")
 #     plt.show()
-
-
-# Filtered the data that has some GPM data
-def filter_keys(station_dictionary, timestamp_min='2000-01-01'):
-    filtered_keys = [
-        key for key, df in dummy_dict.items()
-        if (df.data.index > pd.Timestamp(timestamp_min)).any()
-    ]
-    print(f'Number of stations within the range >{timestamp_min} are:{len(filtered_keys)}')
-    return filtered_keys
-'''To filter data along GPM range we can try:
-    filter 1 = '2000-01-01' , some data
-    filter 2 = '2011-01-01' , with more than 10 years
-    filter 3 = '2017-12-31' , with more than 18 years
-    '''
-keys10years = filter_keys(dummy_dict,timestamp_min='2011-01-01')
-keys18years = filter_keys(dummy_dict,timestamp_min='2017-12-31')
-
-# Create a new dictionary according to the filtered keys selected 
-final_dummy_dict = {
-    key: dummy_dict[key] for key in keys18years if key in dummy_dict}
-
-# Save selected stations to a kml file
-save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
-dic_to_KML(dummy_dict, save_path)  
+# =============================================================================
