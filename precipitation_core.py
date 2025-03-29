@@ -6,8 +6,8 @@
 import os
 import csv
 import pandas as pd
-# import numpy as np
-# import xarray as xr
+import numpy as np
+import xarray as xr
 # import requests 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -109,9 +109,94 @@ class Station():
         plt.legend()
         plt.grid(True)
         plt.show()
+        
+    def _point_pp_extr(self, dataset_path, variable, time=None, pointname=None):
+        """The dataset will be charged in the memory as an xarray"""
+        dataset = xr.open_dataset(dataset_path)
+        # Extracting data
+        y_variable = dataset[variable].sel(lat=self.lat, lon=self.lon, method='nearest').values.flatten()
+        if time is not None:
+            x_variable = dataset[time].values.astype('datetime64[D]')
+            # Plotting with datetime x-axis
+            plt.plot(x_variable, y_variable, label=variable, color='blue', linestyle='-')
+            # Customize plot appearance
+            plt.xlabel('Date')
+            plt.ylabel(variable)
+            plt.title(f'{variable} values at {pointname} ({self.lat}, {self.lon})')
+            plt.grid(True)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            # Add legend
+            plt.legend()
+        else:
+            # Plotting without datetime x-axis
+            plt.plot(y_variable, label=variable, color='blue', linestyle='-')
+            # Customize plot appearance
+            plt.xlabel('Data Index')
+            plt.ylabel(variable)
+            plt.title(f'{variable} values at {pointname} ({self.lat}, {self.lon})')
+            plt.grid(True)
+            plt.tight_layout()
+            plt.legend()            # Add legend
 
-""" Functions to retrive some imformationf from dataframes, which are contained
-    in the .data of the dummy"""
+        # Convert data to DataFrame for return
+        if time is not None:
+            dataframe_result = pd.DataFrame({'Date': pd.to_datetime(x_variable), variable: y_variable})
+            dataframe_result.set_index('Date', inplace=True)
+        else:
+            dataframe_result = pd.DataFrame({variable: y_variable}, columns=[variable])
+
+        return dataframe_result
+    
+        #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
+        
+    def _performance(self, obs_attr: str, sim_attr: str, point_name: str):
+        """
+        Calculates PBIAS, MAE, and RMSE between simulated and observed data.
+    
+        Args:
+            obs_attr (str): Attribute name for observed data.
+            sim_attr (str): Attribute name for simulated data.
+            point_name (str): Name of the point/station being analyzed.
+    
+        Returns:
+            tuple: PBIAS, MAE, RMSE values as floats.
+        """
+        # Fetch attributes dynamically
+        sim_data = getattr(self, sim_attr)
+        obs_data = getattr(self, obs_attr)
+    
+        # Ensure the data has valid entries
+        mask = obs_data.notna()
+        sim_data = sim_data[mask]
+        obs_data = obs_data[mask]
+    
+        # PBIAS Calculation
+        numerator = (sim_data - obs_data).sum()
+        denominator = obs_data.sum()
+        pbias = (numerator / denominator) * 100
+        pbias = pbias.item() if isinstance(pbias, pd.Series) else float(pbias)  # Ensure float type
+    
+        # MAE Calculation
+        mae = (abs(sim_data - obs_data)).mean()
+        mae = mae.item() if isinstance(mae, pd.Series) else float(mae)  # Ensure float type
+    
+        # RMSE Calculation
+        squared_diff = (sim_data - obs_data) ** 2
+        rmse = np.sqrt(squared_diff.mean().iloc[0])   # Explicitly convert mean to float
+        rmse = float(rmse)
+        # Print the results
+        print(f"PBIAS is {pbias:.2f} in {point_name}")
+        print(f"MAE is {mae:.2f} in {point_name}")
+        print(f"RMSE is {rmse:.2f} in {point_name}")
+    
+        return pbias, mae, rmse
+
+        
+""" 
+Functions to retrive some imformation from dataframes, which are contained
+in the .data of the dummy
+"""
     
 def dummy_comparison(data1, data2, parameter_name = 'Precipitation'):
     df1= data1.data.copy()
@@ -254,10 +339,21 @@ final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2
 save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
 dic_to_KML(final_data, save_path)         
         
-
-
 # =============================================================================
-# Playing yard
+# Play ground
+dummy1 = final_data['Crisnejas_ San Marcos']
+a=dummy1.rain4pe = dummy1.data+10
+pbias, mae, rmse = dummy1._performance('data','rain4pe','tryout')
+
+
+# class Station_stads():
+#     def __init__(self, name, pbias, mae, rmse):
+#         self.name = name
+#         self.data = data
+#         self.pbias = None
+#         self.mae = None
+#         self.rmse = None
+
 # dummy_dict[station_list[0]].plot_ana() # to plot all the data
 # station_monthly_sum(dummy_dict[station_list[0]].data) # to sum monthly data
 # dummy_comparison(dummy_dict[station_list[0]],dummy_dict[station_list[1]]) # to compare dataframes
