@@ -109,48 +109,71 @@ class Station():
         plt.legend()
         plt.grid(True)
         plt.show()
-        
-    def _point_pp_extr(self, dataset_path, variable, time=None, pointname=None):
-        """The dataset will be charged in the memory as an xarray"""
-        dataset = xr.open_dataset(dataset_path)
-        # Extracting data
+
+    def _point_pp_extr(self, dataset, variable, attribute_name: str, time=None):
+        """
+        Extracts data from a dataset and dynamically stores it in the class instance.
+    
+        Args:
+            dataset (-): Dataset (NetCDF or similar format).
+            variable (str): Name of the variable to extract.
+            time (str, optional): Name of the time dimension variable. Defaults to None.
+            attribute_name (str): Attribute name to store the extracted data in the class.
+    
+        Returns:
+            pd.DataFrame: The extracted data as a DataFrame.
+        """
+        # Copy dataset using xarray
+        dataset = dataset.copy()
+    
+        # Extract data for the given variable at the nearest lat/lon
         y_variable = dataset[variable].sel(lat=self.lat, lon=self.lon, method='nearest').values.flatten()
+    
+        # Extract time variable if provided
         if time is not None:
             x_variable = dataset[time].values.astype('datetime64[D]')
-            # Plotting with datetime x-axis
-            plt.plot(x_variable, y_variable, label=variable, color='blue', linestyle='-')
-            # Customize plot appearance
-            plt.xlabel('Date')
-            plt.ylabel(variable)
-            plt.title(f'{variable} values at {pointname} ({self.lat}, {self.lon})')
-            plt.grid(True)
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            # Add legend
-            plt.legend()
-        else:
-            # Plotting without datetime x-axis
-            plt.plot(y_variable, label=variable, color='blue', linestyle='-')
-            # Customize plot appearance
-            plt.xlabel('Data Index')
-            plt.ylabel(variable)
-            plt.title(f'{variable} values at {pointname} ({self.lat}, {self.lon})')
-            plt.grid(True)
-            plt.tight_layout()
-            plt.legend()            # Add legend
-
-        # Convert data to DataFrame for return
-        if time is not None:
             dataframe_result = pd.DataFrame({'Date': pd.to_datetime(x_variable), variable: y_variable})
             dataframe_result.set_index('Date', inplace=True)
         else:
             dataframe_result = pd.DataFrame({variable: y_variable}, columns=[variable])
-
+    
+        # Dynamically set the attribute in the class
+        setattr(self, attribute_name, dataframe_result)
+        print(f"Data extracted for {self.name}")
         return dataframe_result
     
-        #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
+    def plot_pisco(self, variable: str, pointname=None):
+        """
+        Plots data stored in a class attribute.
+    
+        Args:
+            attribute_name (str): Name of the class attribute containing the data to plot.
+            variable (str): Name of the variable to display on the plot.
+            pointname (str, optional): Name of the point for labeling. Defaults to None.
+        """
+        # Get the data from the class attribute
+        data = getattr(self, 'PISCO')
+    
+        # Plot the data
+        if 'Date' in data.columns:
+            # Plot with datetime x-axis
+            plt.plot(data.index, data[variable], label=variable, color='blue', linestyle='-')
+            plt.xlabel('Date')
+        else:
+            # Plot without datetime x-axis
+            plt.plot(data[variable], label=variable, color='blue', linestyle='-')
+            plt.xlabel('Data Index')
+    
+        plt.ylabel(variable)
+        plt.title(f'{variable} values at {pointname or "Unknown Point"}')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.xticks(rotation=45)
+        plt.legend()
+        plt.show()    
         
-    def _performance(self, obs_attr: str, sim_attr: str, point_name: str):
+    #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
+    def _performance(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str):
         """
         Calculates PBIAS, MAE, and RMSE between simulated and observed data.
     
@@ -162,9 +185,18 @@ class Station():
         Returns:
             tuple: PBIAS, MAE, RMSE values as floats.
         """
-        # Fetch attributes dynamically
-        sim_data = getattr(self, sim_attr)
         obs_data = getattr(self, obs_attr)
+        # obs_data = obs_data.copy()
+        obs_data = obs_data.loc[start_date:end_date, 'Precipitation']
+        
+        sim_data = getattr(self, sim_attr)
+        # sim_data = sim_data.copy()
+        sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
+
+        print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+    
+        point_name = self.name    
+        # Fetch attributes dynamically
     
         # Ensure the data has valid entries
         mask = obs_data.notna()
@@ -174,6 +206,7 @@ class Station():
         # PBIAS Calculation
         numerator = (sim_data - obs_data).sum()
         denominator = obs_data.sum()
+
         pbias = (numerator / denominator) * 100
         pbias = pbias.item() if isinstance(pbias, pd.Series) else float(pbias)  # Ensure float type
     
@@ -183,7 +216,8 @@ class Station():
     
         # RMSE Calculation
         squared_diff = (sim_data - obs_data) ** 2
-        rmse = np.sqrt(squared_diff.mean().iloc[0])   # Explicitly convert mean to float
+        # rmse = np.sqrt(squared_diff.mean().iloc[0])   # Explicitly convert mean to float
+        rmse = np.sqrt(squared_diff.mean())   # Explicitly convert mean to float
         rmse = float(rmse)
         # Print the results
         print(f"PBIAS is {pbias:.2f} in {point_name}")
@@ -281,7 +315,7 @@ def core_station_data(folder_path = str):
     dummy_dict = {}
     for i in station_list:  # Look for the images
         dummy_dict[i] = Station(i,data_directory)
-
+        print(f'ANA precipitation loaded for station {i}')
     # Save entire dictionary to a kml file
     save_path=r"C:\Users\jvila\Desktop\Andean_project\final_stations_locations.kml"
     dic_to_KML(dummy_dict, save_path)  
@@ -330,20 +364,35 @@ def dict_data_filtered(data_dict: dict, years: int = 10):
 # =============================================================================
 # Command execution
 # =============================================================================
+"""
+    I am setting this convention in the DB, to be considered for the data filling
+    self.data = None, Data from ANA (Autoridad Nacional del Agua)
+    self.rawGPM = None, Data from GPM raw data of the location
+    self.gwrGPM = None, Data from GPM geographically weighted regression
+    self.multiGPM = None, Data from GPM multilinear regression
+    self.rain4pe = None, Data from rain4pe data
+    self.PISCO = None, Data from PISCO data 
+"""
 data_directory=os.path.join(r'C:\Users\jvila\Desktop\Andean_project\data').replace(os.sep, '/')
 
 stations = core_station_data(data_directory) #Set the folder where the ANA data is
 final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2000
         
-# Save selected stations to a kml file
-save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
-dic_to_KML(final_data, save_path)         
-        
+# Save selected stations to a kml file, Optional
+# save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
+# dic_to_KML(final_data, save_path)
+
+import pickle
+#Save the data selected for the study to not re-process it everytime
+save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data.pkl"
+
+with open('final_data.pkl', 'wb') as file:
+    pickle.dump(final_data, file)
+print(f"Dictionary saved successfully to {save_path}!")
+
 # =============================================================================
 # Play ground
-dummy1 = final_data['Crisnejas_ San Marcos']
-a=dummy1.rain4pe = dummy1.data+10
-pbias, mae, rmse = dummy1._performance('data','rain4pe','tryout')
+
 
 
 # class Station_stads():

@@ -1,1274 +1,1274 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
-    <Document id="3697">
-        <Placemark id="3699">
+    <Document id="1">
+        <Placemark id="3">
             <name>Crisnejas_ Augusto Weberbauer</name>
             <description>Crisnejas_ Augusto Weberbauer: Altitude = 2536 meters</description>
-            <Point id="3698">
+            <Point id="2">
                 <coordinates>-78.50000,-7.166667,2536</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3701">
+        <Placemark id="5">
             <name>Crisnejas_ Aylambo</name>
             <description>Crisnejas_ Aylambo: Altitude = 2894 meters</description>
-            <Point id="3700">
+            <Point id="4">
                 <coordinates>-78.51011,-7.193450,2894</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3703">
+        <Placemark id="7">
             <name>Crisnejas_ Cachachi</name>
             <description>Crisnejas_ Cachachi: Altitude = 3140 meters</description>
-            <Point id="3702">
+            <Point id="6">
                 <coordinates>-78.26869,-7.450944,3140</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3705">
+        <Placemark id="9">
             <name>Crisnejas_ Cajabamba</name>
             <description>Crisnejas_ Cajabamba: Altitude = 2480 meters</description>
-            <Point id="3704">
+            <Point id="8">
                 <coordinates>-78.05111,-7.621667,2480</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3707">
+        <Placemark id="11">
             <name>Crisnejas_ Chaquicocha</name>
             <description>Crisnejas_ Chaquicocha: Altitude = 2040 meters</description>
-            <Point id="3706">
+            <Point id="10">
                 <coordinates>-78.15000,-7.533333,2040</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3709">
+        <Placemark id="13">
             <name>Crisnejas_ Hacienda Jocos</name>
             <description>Crisnejas_ Hacienda Jocos: Altitude = 2720 meters</description>
-            <Point id="3708">
+            <Point id="12">
                 <coordinates>-78.00027,-7.516944,2720</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3711">
+        <Placemark id="15">
             <name>Crisnejas_ Huamachuco</name>
             <description>Crisnejas_ Huamachuco: Altitude = 3030 meters</description>
-            <Point id="3710">
+            <Point id="14">
                 <coordinates>-78.04000,-7.819278,3030</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3713">
+        <Placemark id="17">
             <name>Crisnejas_ Huangacocha</name>
             <description>Crisnejas_ Huangacocha: Altitude = 3763 meters</description>
-            <Point id="3712">
+            <Point id="16">
                 <coordinates>-78.06810,-7.937608,3763</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3715">
+        <Placemark id="19">
             <name>Crisnejas_ Jesus</name>
             <description>Crisnejas_ Jesus: Altitude = 2545 meters</description>
-            <Point id="3714">
+            <Point id="18">
                 <coordinates>-78.41263,-7.229444,2545</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3717">
+        <Placemark id="21">
             <name>Crisnejas_ La Encañada</name>
             <description>Crisnejas_ La Encañada: Altitude = 2980 meters</description>
-            <Point id="3716">
+            <Point id="20">
                 <coordinates>-78.33313,-7.123272,2980</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3719">
+        <Placemark id="23">
             <name>Crisnejas_ La Victoria</name>
             <description>Crisnejas_ La Victoria: Altitude = 2630 meters</description>
-            <Point id="3718">
+            <Point id="22">
                 <coordinates>-78.45947,-7.191186,2630</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3721">
+        <Placemark id="25">
             <name>Crisnejas_ Matara</name>
             <description>Crisnejas_ Matara: Altitude = 2830 meters</description>
-            <Point id="3720">
+            <Point id="24">
                 <coordinates>-78.25350,-7.244194,2830</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3723">
+        <Placemark id="27">
             <name>Crisnejas_ Namora</name>
             <description>Crisnejas_ Namora: Altitude = 2700 meters</description>
-            <Point id="3722">
+            <Point id="26">
                 <coordinates>-78.33333,-7.200000,2700</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3725">
+        <Placemark id="29">
             <name>Crisnejas_ Penipampa</name>
             <description>Crisnejas_ Penipampa: Altitude = 3366 meters</description>
-            <Point id="3724">
+            <Point id="28">
                 <coordinates>-78.33361,-7.316944,3366</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3727">
+        <Placemark id="31">
             <name>Crisnejas_ San Marcos</name>
             <description>Crisnejas_ San Marcos: Altitude = 2190 meters</description>
-            <Point id="3726">
+            <Point id="30">
                 <coordinates>-78.17258,-7.322500,2190</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3729">
+        <Placemark id="33">
             <name>Crisnejas_ Sondor-Matara</name>
             <description>Crisnejas_ Sondor-Matara: Altitude = 2908 meters</description>
-            <Point id="3728">
+            <Point id="32">
                 <coordinates>-78.21256,-7.236875,2908</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3731">
+        <Placemark id="35">
             <name>Huayabamba_ Pachiza</name>
             <description>Huayabamba_ Pachiza: Altitude = 380 meters</description>
-            <Point id="3730">
+            <Point id="34">
                 <coordinates>-76.78133,-7.286853,380</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3733">
+        <Placemark id="37">
             <name>Huayabamba_ Rodriguez De Mendoza</name>
             <description>Huayabamba_ Rodriguez De Mendoza: Altitude = 1642 meters</description>
-            <Point id="3732">
+            <Point id="36">
                 <coordinates>-77.40747,-6.316517,1642</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3735">
+        <Placemark id="39">
             <name>Intercuenca Alto Huallaga_ Ambo - Idma</name>
             <description>Intercuenca Alto Huallaga_ Ambo - Idma: Altitude =  3025 meters</description>
-            <Point id="3734">
+            <Point id="38">
                 <coordinates> -76.1669,-10.13361, 3025</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3737">
+        <Placemark id="41">
             <name>Intercuenca Alto Huallaga_ Aucayacu</name>
             <description>Intercuenca Alto Huallaga_ Aucayacu: Altitude = 586 meters</description>
-            <Point id="3736">
+            <Point id="40">
                 <coordinates>-76.11170,-8.929869,586</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3739">
+        <Placemark id="43">
             <name>Intercuenca Alto Huallaga_ Aucayacu2</name>
             <description>Intercuenca Alto Huallaga_ Aucayacu2: Altitude = 560 meters</description>
-            <Point id="3738">
+            <Point id="42">
                 <coordinates>-76.11166,-8.929722,560</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3741">
+        <Placemark id="45">
             <name>Intercuenca Alto Huallaga_ Cachicoto</name>
             <description>Intercuenca Alto Huallaga_ Cachicoto: Altitude = 1140 meters</description>
-            <Point id="3740">
+            <Point id="44">
                 <coordinates>-76.35027,-9.183611,1140</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3743">
+        <Placemark id="47">
             <name>Intercuenca Alto Huallaga_ Campanilla</name>
             <description>Intercuenca Alto Huallaga_ Campanilla: Altitude = 290 meters</description>
-            <Point id="3742">
+            <Point id="46">
                 <coordinates>-76.67000,-7.442200,290</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3745">
+        <Placemark id="49">
             <name>Intercuenca Alto Huallaga_ Canchan</name>
             <description>Intercuenca Alto Huallaga_ Canchan: Altitude = 1986 meters</description>
-            <Point id="3744">
+            <Point id="48">
                 <coordinates>-76.28805,-9.948889,1986</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3747">
+        <Placemark id="51">
             <name>Intercuenca Alto Huallaga_ Carpish</name>
             <description>Intercuenca Alto Huallaga_ Carpish: Altitude = 1950 meters</description>
-            <Point id="3746">
+            <Point id="50">
                 <coordinates>-76.08361,-9.666944,1950</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3749">
+        <Placemark id="53">
             <name>Intercuenca Alto Huallaga_ Carpish2</name>
             <description>Intercuenca Alto Huallaga_ Carpish2: Altitude = 2705 meters</description>
-            <Point id="3748">
+            <Point id="52">
                 <coordinates>-76.06666,-9.666667,2705</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3751">
+        <Placemark id="55">
             <name>Intercuenca Alto Huallaga_ Chaglla</name>
             <description>Intercuenca Alto Huallaga_ Chaglla: Altitude = 2800 meters</description>
-            <Point id="3750">
+            <Point id="54">
                 <coordinates>-75.91500,-9.847222,2800</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3753">
+        <Placemark id="57">
             <name>Intercuenca Alto Huallaga_ Huanuco</name>
             <description>Intercuenca Alto Huallaga_ Huanuco: Altitude = 1947 meters</description>
-            <Point id="3752">
+            <Point id="56">
                 <coordinates>-76.24800,-9.961011,1947</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3755">
+        <Placemark id="59">
             <name>Intercuenca Alto Huallaga_ Huariaca</name>
             <description>Intercuenca Alto Huallaga_ Huariaca: Altitude =  3355 meters</description>
-            <Point id="3754">
+            <Point id="58">
                 <coordinates> -76.1836,-10.43361, 3355</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3757">
+        <Placemark id="61">
             <name>Intercuenca Alto Huallaga_ Jacas Chico</name>
             <description>Intercuenca Alto Huallaga_ Jacas Chico: Altitude = 3673 meters</description>
-            <Point id="3756">
+            <Point id="60">
                 <coordinates>-76.50027,-9.883611,3673</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3759">
+        <Placemark id="63">
             <name>Intercuenca Alto Huallaga_ La Divisoria</name>
             <description>Intercuenca Alto Huallaga_ La Divisoria: Altitude = 1961 meters</description>
-            <Point id="3758">
+            <Point id="62">
                 <coordinates>-75.81393,-9.200908,1961</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3761">
+        <Placemark id="65">
             <name>Intercuenca Alto Huallaga_ La Morada</name>
             <description>Intercuenca Alto Huallaga_ La Morada: Altitude = 542 meters</description>
-            <Point id="3760">
+            <Point id="64">
                 <coordinates>-76.15027,-8.750278,542</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3763">
+        <Placemark id="67">
             <name>Intercuenca Alto Huallaga_ Milpo</name>
             <description>Intercuenca Alto Huallaga_ Milpo: Altitude =  4256 meters</description>
-            <Point id="3762">
+            <Point id="66">
                 <coordinates> -76.2169,-10.60027, 4256</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3765">
+        <Placemark id="69">
             <name>Intercuenca Alto Huallaga_ Ollates</name>
             <description>Intercuenca Alto Huallaga_ Ollates: Altitude = 500 meters</description>
-            <Point id="3764">
+            <Point id="68">
                 <coordinates>-76.41694,-8.416944,500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3767">
+        <Placemark id="71">
             <name>Intercuenca Alto Huallaga_ Ongon</name>
             <description>Intercuenca Alto Huallaga_ Ongon: Altitude = 1315 meters</description>
-            <Point id="3766">
+            <Point id="70">
                 <coordinates>-77.01220,-8.242058,1315</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3769">
+        <Placemark id="73">
             <name>Intercuenca Alto Huallaga_ Palmawasi</name>
             <description>Intercuenca Alto Huallaga_ Palmawasi: Altitude = 500 meters</description>
-            <Point id="3768">
+            <Point id="72">
                 <coordinates>-76.41694,-8.416944,500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3771">
+        <Placemark id="75">
             <name>Intercuenca Alto Huallaga_ Pariamarca</name>
             <description>Intercuenca Alto Huallaga_ Pariamarca: Altitude =  3940 meters</description>
-            <Point id="3770">
+            <Point id="74">
                 <coordinates> -76.1502,-10.65027, 3940</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3773">
+        <Placemark id="77">
             <name>Intercuenca Alto Huallaga_ San Rafael</name>
             <description>Intercuenca Alto Huallaga_ San Rafael: Altitude =  2722 meters</description>
-            <Point id="3772">
+            <Point id="76">
                 <coordinates> -76.1694,-10.32166, 2722</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3775">
+        <Placemark id="79">
             <name>Intercuenca Alto Huallaga_ Tananta</name>
             <description>Intercuenca Alto Huallaga_ Tananta: Altitude = 480 meters</description>
-            <Point id="3774">
+            <Point id="78">
                 <coordinates>-76.59555,-8.109722,480</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3777">
+        <Placemark id="81">
             <name>Intercuenca Alto Huallaga_ Tingo Maria</name>
             <description>Intercuenca Alto Huallaga_ Tingo Maria: Altitude = 660 meters</description>
-            <Point id="3776">
+            <Point id="80">
                 <coordinates>-75.99972,-9.288056,660</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3779">
+        <Placemark id="83">
             <name>Intercuenca Alto Huallaga_ Tingo Maria2</name>
             <description>Intercuenca Alto Huallaga_ Tingo Maria2: Altitude = 644 meters</description>
-            <Point id="3778">
+            <Point id="82">
                 <coordinates>-76.00511,-9.289989,644</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3781">
+        <Placemark id="85">
             <name>Intercuenca Alto Huallaga_ Tocache</name>
             <description>Intercuenca Alto Huallaga_ Tocache: Altitude = 528 meters</description>
-            <Point id="3780">
+            <Point id="84">
                 <coordinates>-76.51694,-8.183611,528</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3783">
+        <Placemark id="87">
             <name>Intercuenca Alto Huallaga_ Tocache2</name>
             <description>Intercuenca Alto Huallaga_ Tocache2: Altitude = 512 meters</description>
-            <Point id="3782">
+            <Point id="86">
                 <coordinates>-76.51666,-8.183333,512</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3785">
+        <Placemark id="89">
             <name>Intercuenca Alto Huallaga_ Tulumayo</name>
             <description>Intercuenca Alto Huallaga_ Tulumayo: Altitude = 640 meters</description>
-            <Point id="3784">
+            <Point id="88">
                 <coordinates>-75.90027,-9.100278,640</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3787">
+        <Placemark id="91">
             <name>Intercuenca Alto Huallaga_ Yanahuanca</name>
             <description>Intercuenca Alto Huallaga_ Yanahuanca: Altitude =  3150 meters</description>
-            <Point id="3786">
+            <Point id="90">
                 <coordinates> -76.5080,-10.49138, 3150</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3789">
+        <Placemark id="93">
             <name>Intercuenca Alto marañon IV_ Bambamarca</name>
             <description>Intercuenca Alto marañon IV_ Bambamarca: Altitude = 2536 meters</description>
-            <Point id="3788">
+            <Point id="92">
                 <coordinates>-78.51833,-6.676389,2536</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3791">
+        <Placemark id="95">
             <name>Intercuenca Alto marañon IV_ Celendin</name>
             <description>Intercuenca Alto marañon IV_ Celendin: Altitude = 2620 meters</description>
-            <Point id="3790">
+            <Point id="94">
                 <coordinates>-78.12217,-6.850000,2620</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3793">
+        <Placemark id="97">
             <name>Intercuenca Alto marañon IV_ Chonta</name>
             <description>Intercuenca Alto marañon IV_ Chonta: Altitude = 2750 meters</description>
-            <Point id="3792">
+            <Point id="96">
                 <coordinates>-78.45000,-6.566667,2750</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3795">
+        <Placemark id="99">
             <name>Intercuenca Alto marañon IV_ Conchan</name>
             <description>Intercuenca Alto marañon IV_ Conchan: Altitude = 2400 meters</description>
-            <Point id="3794">
+            <Point id="98">
                 <coordinates>-78.65000,-6.433333,2400</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3797">
+        <Placemark id="101">
             <name>Intercuenca Alto marañon IV_ El Palto</name>
             <description>Intercuenca Alto marañon IV_ El Palto: Altitude = 149 meters</description>
-            <Point id="3796">
+            <Point id="100">
                 <coordinates>-78.47647,-5.986431,149</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3799">
+        <Placemark id="103">
             <name>Intercuenca Alto marañon IV_ Hacienda Llaucan</name>
             <description>Intercuenca Alto marañon IV_ Hacienda Llaucan: Altitude = 2600 meters</description>
-            <Point id="3798">
+            <Point id="102">
                 <coordinates>-78.53333,-6.750000,2600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3801">
+        <Placemark id="105">
             <name>Intercuenca Alto marañon IV_ Hacienda Negritos</name>
             <description>Intercuenca Alto marañon IV_ Hacienda Negritos: Altitude = 3500 meters</description>
-            <Point id="3800">
+            <Point id="104">
                 <coordinates>-78.53333,-6.900000,3500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3803">
+        <Placemark id="107">
             <name>Intercuenca Alto marañon IV_ Hualgayoc</name>
             <description>Intercuenca Alto marañon IV_ Hualgayoc: Altitude = 3510 meters</description>
-            <Point id="3802">
+            <Point id="106">
                 <coordinates>-78.61666,-6.766667,3510</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3805">
+        <Placemark id="109">
             <name>Intercuenca Alto marañon IV_ Jadibamba</name>
             <description>Intercuenca Alto marañon IV_ Jadibamba: Altitude = 3600 meters</description>
-            <Point id="3804">
+            <Point id="108">
                 <coordinates>-78.40000,-6.816667,3600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3807">
+        <Placemark id="111">
             <name>Intercuenca Alto marañon IV_ La Llica</name>
             <description>Intercuenca Alto marañon IV_ La Llica: Altitude = 2800 meters</description>
-            <Point id="3806">
+            <Point id="110">
                 <coordinates>-78.51880,-6.798164,2800</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3809">
+        <Placemark id="113">
             <name>Intercuenca Alto marañon IV_ Llaucano</name>
             <description>Intercuenca Alto marañon IV_ Llaucano: Altitude = 2750 meters</description>
-            <Point id="3808">
+            <Point id="112">
                 <coordinates>-78.53333,-6.733333,2750</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3811">
+        <Placemark id="115">
             <name>Intercuenca Alto marañon IV_ Michiquillay</name>
             <description>Intercuenca Alto marañon IV_ Michiquillay: Altitude =  3500 meters</description>
-            <Point id="3810">
+            <Point id="114">
                 <coordinates> -78.5333,-6.900000, 3500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3813">
+        <Placemark id="117">
             <name>Intercuenca Alto marañon IV_ Pimpingos</name>
             <description>Intercuenca Alto marañon IV_ Pimpingos: Altitude = 450 meters</description>
-            <Point id="3812">
+            <Point id="116">
                 <coordinates>-78.76880,-6.015764,450</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3815">
+        <Placemark id="119">
             <name>Intercuenca Alto marañon IV_ Quebrada Shugar</name>
             <description>Intercuenca Alto marañon IV_ Quebrada Shugar: Altitude = 3292.7 meters</description>
-            <Point id="3814">
+            <Point id="118">
                 <coordinates>-78.45694,-6.687778,3292.7</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3817">
+        <Placemark id="121">
             <name>Intercuenca Alto marañon IV_ Samangay</name>
             <description>Intercuenca Alto marañon IV_ Samangay: Altitude = 3240 meters</description>
-            <Point id="3816">
+            <Point id="120">
                 <coordinates>-78.57413,-6.629514,3240</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3819">
+        <Placemark id="123">
             <name>Intercuenca Alto marañon IV_ San Juan De Lacamaca</name>
             <description>Intercuenca Alto marañon IV_ San Juan De Lacamaca: Altitude = 3030 meters</description>
-            <Point id="3818">
+            <Point id="122">
                 <coordinates>-78.57552,-6.700000,3030</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3821">
+        <Placemark id="125">
             <name>Intercuenca Alto marañon IV_ Tacabamba</name>
             <description>Intercuenca Alto marañon IV_ Tacabamba: Altitude = 2275 meters</description>
-            <Point id="3820">
+            <Point id="124">
                 <coordinates>-78.61694,-6.383611,2275</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3823">
+        <Placemark id="127">
             <name>Intercuenca Alto marañon V_ Buldibuyo</name>
             <description>Intercuenca Alto marañon V_ Buldibuyo: Altitude = 3243 meters</description>
-            <Point id="3822">
+            <Point id="126">
                 <coordinates>-77.36666,-8.116667,3243</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3825">
+        <Placemark id="129">
             <name>Intercuenca Alto marañon V_ Chavin</name>
             <description>Intercuenca Alto marañon V_ Chavin: Altitude = 3210 meters</description>
-            <Point id="3824">
+            <Point id="128">
                 <coordinates>-77.25000,-9.583333,3210</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3827">
+        <Placemark id="131">
             <name>Intercuenca Alto marañon V_ Chavin2</name>
             <description>Intercuenca Alto marañon V_ Chavin2: Altitude = 3210 meters</description>
-            <Point id="3826">
+            <Point id="130">
                 <coordinates>-77.17527,-9.586028,3210</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3829">
+        <Placemark id="133">
             <name>Intercuenca Alto marañon V_ Dos De Mayo</name>
             <description>Intercuenca Alto marañon V_ Dos De Mayo: Altitude = 3650 meters</description>
-            <Point id="3828">
+            <Point id="132">
                 <coordinates>-76.74552,-9.625222,3650</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3831">
+        <Placemark id="135">
             <name>Intercuenca Alto marañon V_ Huallanca</name>
             <description>Intercuenca Alto marañon V_ Huallanca: Altitude = 3260 meters</description>
-            <Point id="3830">
+            <Point id="134">
                 <coordinates>-76.95000,-9.883333,3260</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3833">
+        <Placemark id="137">
             <name>Intercuenca Alto marañon V_ Huari</name>
             <description>Intercuenca Alto marañon V_ Huari: Altitude = 3149 meters</description>
-            <Point id="3832">
+            <Point id="136">
                 <coordinates>-77.16666,-9.350000,3149</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3835">
+        <Placemark id="139">
             <name>Intercuenca Alto marañon V_ Jacas Grande</name>
             <description>Intercuenca Alto marañon V_ Jacas Grande: Altitude = 3273 meters</description>
-            <Point id="3834">
+            <Point id="138">
                 <coordinates>-76.76041,-9.543300,3273</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3837">
+        <Placemark id="141">
             <name>Intercuenca Alto marañon V_ La Union</name>
             <description>Intercuenca Alto marañon V_ La Union: Altitude = 3201 meters</description>
-            <Point id="3836">
+            <Point id="140">
                 <coordinates>-76.79263,-9.820336,3201</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3839">
+        <Placemark id="143">
             <name>Intercuenca Alto marañon V_ Llata</name>
             <description>Intercuenca Alto marañon V_ Llata: Altitude = 3429 meters</description>
-            <Point id="3838">
+            <Point id="142">
                 <coordinates>-76.78333,-9.550000,3429</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3841">
+        <Placemark id="145">
             <name>Intercuenca Alto marañon V_ Pomabamba</name>
             <description>Intercuenca Alto marañon V_ Pomabamba: Altitude = 3000 meters</description>
-            <Point id="3840">
+            <Point id="144">
                 <coordinates>-77.46666,-8.783333,3000</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3843">
+        <Placemark id="147">
             <name>Intercuenca Alto marañon V_ Sihuas</name>
             <description>Intercuenca Alto marañon V_ Sihuas: Altitude = 2716 meters</description>
-            <Point id="3842">
+            <Point id="146">
                 <coordinates>-77.63163,-8.546481,2716</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3845">
+        <Placemark id="149">
             <name>Mantaro_ Acobamba</name>
             <description>Mantaro_ Acobamba: Altitude =  3236 meters</description>
-            <Point id="3844">
+            <Point id="148">
                 <coordinates> -74.5677,-12.83750, 3236</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3847">
+        <Placemark id="151">
             <name>Mantaro_ Acobambilla</name>
             <description>Mantaro_ Acobambilla: Altitude =  3795 meters</description>
-            <Point id="3846">
+            <Point id="150">
                 <coordinates> -75.3166,-12.66666, 3795</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3849">
+        <Placemark id="153">
             <name>Mantaro_ Acostambo</name>
             <description>Mantaro_ Acostambo: Altitude =  3650 meters</description>
-            <Point id="3848">
+            <Point id="152">
                 <coordinates> -75.0356,-12.34233, 3650</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3851">
+        <Placemark id="155">
             <name>Mantaro_ Allpachaca</name>
             <description>Mantaro_ Allpachaca: Altitude =  3600 meters</description>
-            <Point id="3850">
+            <Point id="154">
                 <coordinates> -74.2666,-13.38333, 3600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3853">
+        <Placemark id="157">
             <name>Mantaro_ Allpachaca2</name>
             <description>Mantaro_ Allpachaca2: Altitude =  3550 meters</description>
-            <Point id="3852">
+            <Point id="156">
                 <coordinates> -74.2688,-13.38861, 3550</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3855">
+        <Placemark id="159">
             <name>Mantaro_ Alpamarca</name>
             <description>Mantaro_ Alpamarca: Altitude =  4715 meters</description>
-            <Point id="3854">
+            <Point id="158">
                 <coordinates> -76.4502,-11.21694, 4715</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3857">
+        <Placemark id="161">
             <name>Mantaro_ Andamarca</name>
             <description>Mantaro_ Andamarca: Altitude =  35335 meters</description>
-            <Point id="3856">
+            <Point id="160">
                 <coordinates> -74.8336,-11.71694, 35335</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3859">
+        <Placemark id="163">
             <name>Mantaro_ Carhuacayan</name>
             <description>Mantaro_ Carhuacayan: Altitude =  4150 meters</description>
-            <Point id="3858">
+            <Point id="162">
                 <coordinates> -76.2833,-11.20000, 4150</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3861">
+        <Placemark id="165">
             <name>Mantaro_ Casaracra</name>
             <description>Mantaro_ Casaracra: Altitude =  3850 meters</description>
-            <Point id="3860">
+            <Point id="164">
                 <coordinates> -75.9500,-11.45000, 3850</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3863">
+        <Placemark id="167">
             <name>Mantaro_ Cerro De Pasco</name>
             <description>Mantaro_ Cerro De Pasco: Altitude =  4260 meters</description>
-            <Point id="3862">
+            <Point id="166">
                 <coordinates> -76.2641,-10.69333, 4260</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3865">
+        <Placemark id="169">
             <name>Mantaro_ Colcabamba</name>
             <description>Mantaro_ Colcabamba: Altitude = 780 meters</description>
-            <Point id="3864">
+            <Point id="168">
                 <coordinates> -74.6775,-12.40638,780</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3867">
+        <Placemark id="171">
             <name>Mantaro_ Cosmos</name>
             <description>Mantaro_ Cosmos: Altitude =  4575 meters</description>
-            <Point id="3866">
+            <Point id="170">
                 <coordinates> -75.5212,-12.14862, 4575</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3869">
+        <Placemark id="173">
             <name>Mantaro_ Hacienda Tocaz</name>
             <description>Mantaro_ Hacienda Tocaz: Altitude =  2950 meters</description>
-            <Point id="3868">
+            <Point id="172">
                 <coordinates> -74.6132,-12.49952, 2950</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3871">
+        <Placemark id="175">
             <name>Mantaro_ Huamanga</name>
             <description>Mantaro_ Huamanga: Altitude =  2761 meters</description>
-            <Point id="3870">
+            <Point id="174">
                 <coordinates> -74.2369,-13.15000, 2761</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3873">
+        <Placemark id="177">
             <name>Mantaro_ Huamanga2</name>
             <description>Mantaro_ Huamanga2: Altitude =  2782 meters</description>
-            <Point id="3872">
+            <Point id="176">
                 <coordinates> -74.2197,-13.14825, 2782</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3875">
+        <Placemark id="179">
             <name>Mantaro_ Huancalpi</name>
             <description>Mantaro_ Huancalpi: Altitude =  3800 meters</description>
-            <Point id="3874">
+            <Point id="178">
                 <coordinates> -75.2419,-12.58000, 3800</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3877">
+        <Placemark id="181">
             <name>Mantaro_ Huancavelica</name>
             <description>Mantaro_ Huancavelica: Altitude =  3676 meters</description>
-            <Point id="3876">
+            <Point id="180">
                 <coordinates> -75.0122,-12.78055, 3676</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3879">
+        <Placemark id="183">
             <name>Mantaro_ Huanta Gore</name>
             <description>Mantaro_ Huanta Gore: Altitude = 735 meters</description>
-            <Point id="3878">
+            <Point id="182">
                 <coordinates>74.233278,-12.9475 ,735</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3881">
+        <Placemark id="185">
             <name>Mantaro_ Huayao</name>
             <description>Mantaro_ Huayao: Altitude =  3308 meters</description>
-            <Point id="3880">
+            <Point id="184">
                 <coordinates> -75.3227,-12.03833, 3308</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3883">
+        <Placemark id="187">
             <name>Mantaro_ Ingenio</name>
             <description>Mantaro_ Ingenio: Altitude =  3450 meters</description>
-            <Point id="3882">
+            <Point id="186">
                 <coordinates> -75.2558,-11.87944, 3450</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3885">
+        <Placemark id="189">
             <name>Mantaro_ Jauja</name>
             <description>Mantaro_ Jauja: Altitude =  3322 meters</description>
-            <Point id="3884">
+            <Point id="188">
                 <coordinates> -75.4744,-11.78361, 3322</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3887">
+        <Placemark id="191">
             <name>Mantaro_ Junin</name>
             <description>Mantaro_ Junin: Altitude =  4120 meters</description>
-            <Point id="3886">
+            <Point id="190">
                 <coordinates> -75.9997,-11.13527, 4120</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3889">
+        <Placemark id="193">
             <name>Mantaro_ La Cruzada</name>
             <description>Mantaro_ La Cruzada: Altitude =  4600 meters</description>
-            <Point id="3888">
+            <Point id="192">
                 <coordinates> -76.4000,-11.03333, 4600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3891">
+        <Placemark id="195">
             <name>Mantaro_ La Oroya</name>
             <description>Mantaro_ La Oroya: Altitude = 860 meters</description>
-            <Point id="3890">
+            <Point id="194">
                 <coordinates> -75.9585,-11.56762,860</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3893">
+        <Placemark id="197">
             <name>Mantaro_ La Quinua</name>
             <description>Mantaro_ La Quinua: Altitude =  3260 meters</description>
-            <Point id="3892">
+            <Point id="196">
                 <coordinates> -74.1413,-13.05527, 3260</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3895">
+        <Placemark id="199">
             <name>Mantaro_ Laive</name>
             <description>Mantaro_ Laive: Altitude =  3990 meters</description>
-            <Point id="3894">
+            <Point id="198">
                 <coordinates> -75.3605,-12.25222, 3990</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3897">
+        <Placemark id="201">
             <name>Mantaro_ Lircay</name>
             <description>Mantaro_ Lircay: Altitude =  3150 meters</description>
-            <Point id="3896">
+            <Point id="200">
                 <coordinates> -74.7177,-12.98166, 3150</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3899">
+        <Placemark id="203">
             <name>Mantaro_ Luricocha</name>
             <description>Mantaro_ Luricocha: Altitude =  2625 meters</description>
-            <Point id="3898">
+            <Point id="202">
                 <coordinates> -74.2333,-12.81666, 2625</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3901">
+        <Placemark id="205">
             <name>Mantaro_ Manta</name>
             <description>Mantaro_ Manta: Altitude =  3750 meters</description>
-            <Point id="3900">
+            <Point id="204">
                 <coordinates> -75.2000,-12.61666, 3750</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3903">
+        <Placemark id="207">
             <name>Mantaro_ Marcapomacocha</name>
             <description>Mantaro_ Marcapomacocha: Altitude =  4479 meters</description>
-            <Point id="3902">
+            <Point id="206">
                 <coordinates> -76.3250,-11.40444, 4479</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3905">
+        <Placemark id="209">
             <name>Mantaro_ Matibamba</name>
             <description>Mantaro_ Matibamba: Altitude =  2200 meters</description>
-            <Point id="3904">
+            <Point id="208">
                 <coordinates> -74.8166,-12.08333, 2200</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3907">
+        <Placemark id="211">
             <name>Mantaro_ Pachachaca</name>
             <description>Mantaro_ Pachachaca: Altitude =  3990 meters</description>
-            <Point id="3906">
+            <Point id="210">
                 <coordinates> -76.0333,-11.61666, 3990</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3909">
+        <Placemark id="213">
             <name>Mantaro_ Pachachaca2</name>
             <description>Mantaro_ Pachachaca2: Altitude =  3971 meters</description>
-            <Point id="3908">
+            <Point id="212">
                 <coordinates> -75.9166,-11.50000, 3971</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3911">
+        <Placemark id="215">
             <name>Mantaro_ Pampas</name>
             <description>Mantaro_ Pampas: Altitude =  3260 meters</description>
-            <Point id="3910">
+            <Point id="214">
                 <coordinates> -74.8885,-12.30000, 3260</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3913">
+        <Placemark id="217">
             <name>Mantaro_ Paucarbamba</name>
             <description>Mantaro_ Paucarbamba: Altitude =  3000 meters</description>
-            <Point id="3912">
+            <Point id="216">
                 <coordinates> -74.6051,-12.45198, 3000</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3915">
+        <Placemark id="219">
             <name>Mantaro_ Pilchaca</name>
             <description>Mantaro_ Pilchaca: Altitude =  3570 meters</description>
-            <Point id="3914">
+            <Point id="218">
                 <coordinates> -75.0833,-12.35000, 3570</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3917">
+        <Placemark id="221">
             <name>Mantaro_ Pomacocha</name>
             <description>Mantaro_ Pomacocha: Altitude =  4270 meters</description>
-            <Point id="3916">
+            <Point id="220">
                 <coordinates> -76.1166,-11.71666, 4270</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3919">
+        <Placemark id="223">
             <name>Mantaro_ Pucara</name>
             <description>Mantaro_ Pucara: Altitude =  4300 meters</description>
-            <Point id="3918">
+            <Point id="222">
                 <coordinates> -76.0666,-11.58333, 4300</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3921">
+        <Placemark id="225">
             <name>Mantaro_ Punabamba</name>
             <description>Mantaro_ Punabamba: Altitude =  4350 meters</description>
-            <Point id="3920">
+            <Point id="224">
                 <coordinates> -76.0833,-11.48333, 4350</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3923">
+        <Placemark id="227">
             <name>Mantaro_ Salcabamba</name>
             <description>Mantaro_ Salcabamba: Altitude =  2900 meters</description>
-            <Point id="3922">
+            <Point id="226">
                 <coordinates> -74.8166,-12.15000, 2900</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3925">
+        <Placemark id="229">
             <name>Mantaro_ San Juan De Jarpa</name>
             <description>Mantaro_ San Juan De Jarpa: Altitude =  3726 meters</description>
-            <Point id="3924">
+            <Point id="228">
                 <coordinates> -75.4319,-12.12388, 3726</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3927">
+        <Placemark id="231">
             <name>Mantaro_ San Juan De Jarpa2</name>
             <description>Mantaro_ San Juan De Jarpa2: Altitude =  3726 meters</description>
-            <Point id="3926">
+            <Point id="230">
                 <coordinates> -75.4304,-12.05810, 3726</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3929">
+        <Placemark id="233">
             <name>Mantaro_ San Lorenzo</name>
             <description>Mantaro_ San Lorenzo: Altitude =  2600 meters</description>
-            <Point id="3928">
+            <Point id="232">
                 <coordinates> -74.7691,-12.30533, 2600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3931">
+        <Placemark id="235">
             <name>Mantaro_ San Pedro De Cachi</name>
             <description>Mantaro_ San Pedro De Cachi: Altitude =  3188 meters</description>
-            <Point id="3930">
+            <Point id="234">
                 <coordinates> -74.3919,-13.08361, 3188</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3933">
+        <Placemark id="237">
             <name>Mantaro_ San Pedro De Cachi2</name>
             <description>Mantaro_ San Pedro De Cachi2: Altitude =  3188 meters</description>
-            <Point id="3932">
+            <Point id="236">
                 <coordinates> -74.3985,-13.08659, 3188</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3935">
+        <Placemark id="239">
             <name>Mantaro_ San Pedro De Chuclu</name>
             <description>Mantaro_ San Pedro De Chuclu: Altitude =  3380 meters</description>
-            <Point id="3934">
+            <Point id="238">
                 <coordinates> -75.4997,-11.75755, 3380</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3937">
+        <Placemark id="241">
             <name>Mantaro_ Santa Ana</name>
             <description>Mantaro_ Santa Ana: Altitude =  3295 meters</description>
-            <Point id="3936">
+            <Point id="240">
                 <coordinates> -75.2208,-12.00416, 3295</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3939">
+        <Placemark id="243">
             <name>Mantaro_ Santa Rita</name>
             <description>Mantaro_ Santa Rita: Altitude =  4408 meters</description>
-            <Point id="3938">
+            <Point id="242">
                 <coordinates> -76.1166,-11.58333, 4408</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3941">
+        <Placemark id="245">
             <name>Mantaro_ Shullcas</name>
             <description>Mantaro_ Shullcas: Altitude =  3510 meters</description>
-            <Point id="3940">
+            <Point id="244">
                 <coordinates> -75.1666,-12.00000, 3510</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3943">
+        <Placemark id="247">
             <name>Mantaro_ Taza Oroya</name>
             <description>Mantaro_ Taza Oroya: Altitude =  3950 meters</description>
-            <Point id="3942">
+            <Point id="246">
                 <coordinates> -75.9234,-11.52491, 3950</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3945">
+        <Placemark id="249">
             <name>Mantaro_ Telepaccha</name>
             <description>Mantaro_ Telepaccha: Altitude =  4400 meters</description>
-            <Point id="3944">
+            <Point id="248">
                 <coordinates> -75.3000,-12.75000, 4400</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3947">
+        <Placemark id="251">
             <name>Mantaro_ Tuctu Golf</name>
             <description>Mantaro_ Tuctu Golf: Altitude =  4500 meters</description>
-            <Point id="3946">
+            <Point id="250">
                 <coordinates> -76.1333,-11.60000, 4500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3949">
+        <Placemark id="253">
             <name>Mantaro_ Usibamba</name>
             <description>Mantaro_ Usibamba: Altitude =  3605 meters</description>
-            <Point id="3948">
+            <Point id="252">
                 <coordinates> -75.4743,-12.05000, 3605</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3951">
+        <Placemark id="255">
             <name>Mantaro_ Viques</name>
             <description>Mantaro_ Viques: Altitude =  3186 meters</description>
-            <Point id="3950">
+            <Point id="254">
                 <coordinates> -75.2174,-12.16272, 3186</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3953">
+        <Placemark id="257">
             <name>Mantaro_ Wayllapampa</name>
             <description>Mantaro_ Wayllapampa: Altitude =  2518 meters</description>
-            <Point id="3952">
+            <Point id="256">
                 <coordinates> -74.2166,-13.07638, 2518</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3955">
+        <Placemark id="259">
             <name>Mantaro_ Yantac</name>
             <description>Mantaro_ Yantac: Altitude =  4600 meters</description>
-            <Point id="3954">
+            <Point id="258">
                 <coordinates> -76.4000,-11.33333, 4600</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3957">
+        <Placemark id="261">
             <name>Mantaro_ Yauli</name>
             <description>Mantaro_ Yauli: Altitude =  4141 meters</description>
-            <Point id="3956">
+            <Point id="260">
                 <coordinates> -76.0833,-11.66666, 4141</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3959">
+        <Placemark id="263">
             <name>Pachitea_ Esperanza</name>
             <description>Pachitea_ Esperanza: Altitude =  1200 meters</description>
-            <Point id="3958">
+            <Point id="262">
                 <coordinates> -75.2502,-10.16694, 1200</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3961">
+        <Placemark id="265">
             <name>Pachitea_ Iscozacin</name>
             <description>Pachitea_ Iscozacin: Altitude =  1200 meters</description>
-            <Point id="3960">
+            <Point id="264">
                 <coordinates> -75.1500,-10.18333, 1200</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3963">
+        <Placemark id="267">
             <name>Pachitea_ Macuya</name>
             <description>Pachitea_ Macuya: Altitude = 225 meters</description>
-            <Point id="3962">
+            <Point id="266">
                 <coordinates>-75.00416,-8.872222,225</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3965">
+        <Placemark id="269">
             <name>Pachitea_ Oxapampa</name>
             <description>Pachitea_ Oxapampa: Altitude =  1850 meters</description>
-            <Point id="3964">
+            <Point id="268">
                 <coordinates> -75.3897,-10.59277, 1850</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3967">
+        <Placemark id="271">
             <name>Pachitea_ Pozuzo</name>
             <description>Pachitea_ Pozuzo: Altitude =  1000 meters</description>
-            <Point id="3966">
+            <Point id="270">
                 <coordinates> -75.5591,-10.05083, 1000</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3969">
+        <Placemark id="273">
             <name>Pachitea_ Puerto Bermudez</name>
             <description>Pachitea_ Puerto Bermudez: Altitude =  300 meters</description>
-            <Point id="3968">
+            <Point id="272">
                 <coordinates> -74.9002,-10.30027, 300</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3971">
+        <Placemark id="275">
             <name>Pachitea_ Puerto Inca</name>
             <description>Pachitea_ Puerto Inca: Altitude = 249 meters</description>
-            <Point id="3970">
+            <Point id="274">
                 <coordinates>-74.96583,-9.372778,249</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3973">
+        <Placemark id="277">
             <name>Pachitea_ Puerto Victoria</name>
             <description>Pachitea_ Puerto Victoria: Altitude = 227 meters</description>
-            <Point id="3972">
+            <Point id="276">
                 <coordinates>-74.93361,-9.866944,227</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3975">
+        <Placemark id="279">
             <name>Pachitea_ San Miguel De Bocaz</name>
             <description>Pachitea_ San Miguel De Bocaz: Altitude =  1075 meters</description>
-            <Point id="3974">
+            <Point id="278">
                 <coordinates> -75.1502,-10.63361, 1075</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3977">
+        <Placemark id="281">
             <name>Pachitea_ Tournavista</name>
             <description>Pachitea_ Tournavista: Altitude = 213 meters</description>
-            <Point id="3976">
+            <Point id="280">
                 <coordinates>-74.71666,-8.929722,213</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3979">
+        <Placemark id="283">
             <name>Perene_ Chontabamba</name>
             <description>Perene_ Chontabamba: Altitude =  1247 meters</description>
-            <Point id="3978">
+            <Point id="282">
                 <coordinates> -75.3527,-11.25972, 1247</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3981">
+        <Placemark id="285">
             <name>Perene_ Comas</name>
             <description>Perene_ Comas: Altitude =  3300 meters</description>
-            <Point id="3980">
+            <Point id="284">
                 <coordinates> -75.1288,-11.74833, 3300</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3983">
+        <Placemark id="287">
             <name>Perene_ Huasahuasi</name>
             <description>Perene_ Huasahuasi: Altitude =  2750 meters</description>
-            <Point id="3982">
+            <Point id="286">
                 <coordinates> -75.6319,-11.26944, 2750</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3985">
+        <Placemark id="289">
             <name>Perene_ Huasahuasi2</name>
             <description>Perene_ Huasahuasi2: Altitude =  2750 meters</description>
-            <Point id="3984">
+            <Point id="288">
                 <coordinates> -75.6319,-11.26944, 2750</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3987">
+        <Placemark id="291">
             <name>Perene_ La Granja</name>
             <description>Perene_ La Granja: Altitude =  2068 meters</description>
-            <Point id="3986">
+            <Point id="290">
                 <coordinates> -75.2166,-10.71666, 2068</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3989">
+        <Placemark id="293">
             <name>Perene_ Mazamari</name>
             <description>Perene_ Mazamari: Altitude =  700 meters</description>
-            <Point id="3988">
+            <Point id="292">
                 <coordinates> -74.5500,-11.25000, 700</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3991">
+        <Placemark id="295">
             <name>Perene_ Meza Pata</name>
             <description>Perene_ Meza Pata: Altitude =  1612 meters</description>
-            <Point id="3990">
+            <Point id="294">
                 <coordinates> -75.3833,-10.71666, 1612</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3993">
+        <Placemark id="297">
             <name>Perene_ Pampa Whaley</name>
             <description>Perene_ Pampa Whaley: Altitude =  960 meters</description>
-            <Point id="3992">
+            <Point id="296">
                 <coordinates> -75.2500,-10.90000, 960</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3995">
+        <Placemark id="299">
             <name>Perene_ Perene</name>
             <description>Perene_ Perene: Altitude =  660 meters</description>
-            <Point id="3994">
+            <Point id="298">
                 <coordinates> -74.8929,-10.91427, 660</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3997">
+        <Placemark id="301">
             <name>Perene_ Pichanaky</name>
             <description>Perene_ Pichanaky: Altitude =  546 meters</description>
-            <Point id="3996">
+            <Point id="300">
                 <coordinates> -74.8669,-10.93333, 546</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="3999">
+        <Placemark id="303">
             <name>Perene_ Puerto Ocopa</name>
             <description>Perene_ Puerto Ocopa: Altitude =  305 meters</description>
-            <Point id="3998">
+            <Point id="302">
                 <coordinates> -74.3072,-11.14527, 305</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4001">
+        <Placemark id="305">
             <name>Perene_ Ricran</name>
             <description>Perene_ Ricran: Altitude =  3500 meters</description>
-            <Point id="4000">
+            <Point id="304">
                 <coordinates> -75.5326,-11.55605, 3500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4003">
+        <Placemark id="307">
             <name>Perene_ Runatullo</name>
             <description>Perene_ Runatullo: Altitude =  3186 meters</description>
-            <Point id="4002">
+            <Point id="306">
                 <coordinates> -75.0508,-11.59305, 3186</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4005">
+        <Placemark id="309">
             <name>Perene_ San Eloy De Singayac</name>
             <description>Perene_ San Eloy De Singayac: Altitude =  1500 meters</description>
-            <Point id="4004">
+            <Point id="308">
                 <coordinates> -75.2833,-11.25000, 1500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4007">
+        <Placemark id="311">
             <name>Perene_ San Eloy De Singayac2</name>
             <description>Perene_ San Eloy De Singayac2: Altitude =  1500 meters</description>
-            <Point id="4006">
+            <Point id="310">
                 <coordinates> -75.2833,-11.25000, 1500</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4009">
+        <Placemark id="313">
             <name>Perene_ Satipo</name>
             <description>Perene_ Satipo: Altitude =  660 meters</description>
-            <Point id="4008">
+            <Point id="312">
                 <coordinates> -74.6086,-11.22444, 660</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4011">
+        <Placemark id="315">
             <name>Perene_ Satipo2</name>
             <description>Perene_ Satipo2: Altitude =  660 meters</description>
-            <Point id="4010">
+            <Point id="314">
                 <coordinates> -74.6086,-11.22444, 660</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4013">
+        <Placemark id="317">
             <name>Perene_ Tarma</name>
             <description>Perene_ Tarma: Altitude =  3000 meters</description>
-            <Point id="4012">
+            <Point id="316">
                 <coordinates> -75.6913,-11.39666, 3000</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
         </Placemark>
-        <Placemark id="4015">
+        <Placemark id="319">
             <name>Perene_ Villa Rica</name>
             <description>Perene_ Villa Rica: Altitude = 470 meters</description>
-            <Point id="4014">
+            <Point id="318">
                 <coordinates> -75.2625,-10.75416,470</coordinates>
                 <altitudeMode>absolute</altitudeMode>
             </Point>
