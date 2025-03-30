@@ -1,0 +1,1 @@
+pip install pandas numpy xarray matplotlib conda dask

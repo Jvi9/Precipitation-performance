@@ -8,11 +8,9 @@ import csv
 import pandas as pd
 import numpy as np
 import xarray as xr
-# import requests 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 # import geopandas as gpd
-# from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from shapely.geometry import Polygon
 # from tqdm import tqdm  #status bar
 # from rasterio.warp import calculate_default_transform, reproject, Resampling
@@ -27,14 +25,7 @@ import matplotlib.colors as colors
 # from rasterio.plot import show
 # import re
 from datetime import datetime, timedelta
-# from dateutil.relativedelta import relativedelta
 # import pysal
-# from mpl_toolkits.mplot3d import Axes3D
-# from mgwr.gwr import GWR, MGWR
-# from mgwr.sel_bw import Sel_BW
-# from scipy.interpolate import griddata
-# import cftime
-# from scipy.interpolate import RectBivariateSpline
 # import rioxarray
 # from shapely.geometry import mapping
 import simplekml
@@ -186,11 +177,15 @@ class Station():
             tuple: PBIAS, MAE, RMSE values as floats.
         """
         obs_data = getattr(self, obs_attr)
-        # obs_data = obs_data.copy()
+        obs_data = obs_data.copy()
+        obs_data.index = pd.to_datetime(obs_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # obs_data = obs_data.dropna(subset=['index'])  # Remove rows with invalid datetime conversion
         obs_data = obs_data.loc[start_date:end_date, 'Precipitation']
         
         sim_data = getattr(self, sim_attr)
-        # sim_data = sim_data.copy()
+        sim_data = sim_data.copy()
+        sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # sim_data = obs_data.dropna(subset=['index'])  # Remove rows with invalid datetime conversion
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
 
         print(f'Data was homogenized to the same time range {start_date}:{end_date}')
@@ -382,13 +377,13 @@ final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2
 # save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
 # dic_to_KML(final_data, save_path)
 
-import pickle
-#Save the data selected for the study to not re-process it everytime
-save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data.pkl"
+# import pickle
+# #Save the data selected for the study to not re-process it everytime
+# save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data.pkl"
 
-with open('final_data.pkl', 'wb') as file:
-    pickle.dump(final_data, file)
-print(f"Dictionary saved successfully to {save_path}!")
+# with open(save_path, 'wb') as file:
+#     pickle.dump(final_data, file)
+# print(f"Dictionary saved successfully to {save_path}!")
 
 # =============================================================================
 # Play ground
