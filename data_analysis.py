@@ -33,39 +33,59 @@ def set_pandas_time(dictionary_of_stations):
 
 """Posible solution for the storage of all the statistics""" 
 class statsPISCO():
-    def __init__(self, station_name, mae, pbias, rmse):
+    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
+        self.fbi = fbi
+        self.far = far
+        self.pod = pod
+        self.acc = acc
         
 class statsrawGPM():
-    def __init__(self, station_name, mae, pbias, rmse):
+    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
+        self.fbi = fbi
+        self.far = far
+        self.pod = pod
+        self.acc = acc
         
 class statsgwrGPM():
-    def __init__(self, station_name, mae, pbias, rmse):
+    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
+        self.fbi = fbi
+        self.far = far
+        self.pod = pod
+        self.acc = acc
         
 class statsdmultiGPM():
-    def __init__(self, station_name, mae, pbias, rmse):
+    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
+        self.fbi = fbi
+        self.far = far
+        self.pod = pod
+        self.acc = acc
         
 class statsrain4pe():
-    def __init__(self, station_name, mae, pbias, rmse):
+    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
-        self.rmse = rmse       
+        self.rmse = rmse    
+        self.fbi = fbi
+        self.far = far
+        self.pod = pod
+        self.acc = acc
     
 # =============================================================================
 # Code execution
@@ -92,7 +112,8 @@ stats_rawGPM = {}
 for key in final_data.keys():
     station_name = key
     pbias, mae, rmse = final_data[key]._performance('data','rawGPM','2005-01-01','2018-12-31')
-    stats_rawGPM[key] = statsrawGPM(station_name, mae, pbias, rmse)
+    fbi, far, pod, acc  = final_data[key]._detection_capability('data','rawGPM','2005-01-01','2018-12-31',min_obs_threshold = 1.0)
+    stats_rawGPM[key] = statsrawGPM(station_name, mae, pbias, rmse, fbi, far, pod, acc)
 
 mae_summary1 = pd.DataFrame({'mae':[stats_rawGPM[key].mae for key, value in stats_rawGPM.items()]}, index=list(final_data.keys()))
 
@@ -100,7 +121,8 @@ stats_gwrGPM = {}
 for key in final_data.keys():
     station_name = key
     pbias, mae, rmse = final_data[key]._performance('data','gwrGPM','2005-01-01','2018-12-31')
-    stats_gwrGPM[key] = statsgwrGPM(station_name, mae, pbias, rmse)
+    fbi, far, pod, acc  = final_data[key]._detection_capability('data','gwrGPM','2005-01-01','2018-12-31',min_obs_threshold = 1.0)
+    stats_gwrGPM[key] = statsgwrGPM(station_name, mae, pbias, rmse, fbi, far, pod, acc)
 
 mae_summary2 = pd.DataFrame({'mae':[stats_gwrGPM[key].mae for key, value in stats_gwrGPM.items()]}, index=list(final_data.keys()))
 
@@ -108,15 +130,17 @@ stats_PISCO = {}
 for key in final_data.keys():
     station_name = key
     pbias, mae, rmse = final_data[key]._performance('data','PISCO','2005-01-01','2018-12-31')
-    stats_PISCO[key] = statsPISCO(station_name, mae, pbias, rmse)
+    fbi, far, pod, acc  = final_data[key]._detection_capability('data','PISCO','2005-01-01','2018-12-31',min_obs_threshold = 1.0)
+    stats_PISCO[key] = statsPISCO(station_name, mae, pbias, rmse, fbi, far, pod, acc)
 
 mae_summary3 = pd.DataFrame({'mae':[stats_PISCO[key].mae for key, value in stats_PISCO.items()]}, index=list(final_data.keys()))
 
 stats_rain4pe = {}
 for key in final_data.keys():
     station_name = key
-    pbias, mae, rmse = final_data[key]._performance('data','PISCO','2005-01-01','2018-12-31')
-    stats_rain4pe[key] = statsrain4pe(station_name, mae, pbias, rmse)
+    pbias, mae, rmse = final_data[key]._performance('data','rain4pe','2005-01-01','2018-12-31')
+    fbi, far, pod, acc  = final_data[key]._detection_capability('data','rain4pe','2005-01-01','2018-12-31',min_obs_threshold = 1.0)
+    stats_rain4pe[key] = statsrain4pe(station_name, mae, pbias, rmse, fbi, far, pod, acc)
 
 mae_summary4 = pd.DataFrame({'mae':[stats_rain4pe[key].mae for key, value in stats_rain4pe.items()]}, index=list(final_data.keys()))
 
@@ -135,45 +159,17 @@ print(f'rmse gwrGPM {stats_gwrGPM['Crisnejas_ La Encañada'].rmse}')
 print(f'rmse PISCO {stats_PISCO['Crisnejas_ La Encañada'].rmse}')
 print(f'rmse rain4pe {stats_rain4pe['Crisnejas_ La Encañada'].rmse}')
 
-#Calculate the detection capability
-# FBI / Frecuency bias index
-# FAR / False Alarm ratio
-# POD / Probably of detection
-
-#I need to calculate:
-    #                   Gauges rain     Gauges no rain
-    #Satellite rain         a               b
-    #satellite no rain      c               d
-
-#FBI = (a+b)/(a+c)
-#FAR = b/(a+c)
-#POD = a/(a+c)
+stats_PISCO['Crisnejas_ La Encañada'].acc #To see the accuracy of that station
     
-# Using summary_dictionary comparing the GPM raw and the stations
-# a= if 'Average' >0 and 'Ground_based'>0 ,True
-# b= if 'Average' >0 and 'Ground_based'=0 ,True
-# c= if 'Average' =0 and 'Ground_based'>0 ,True
-# d= if 'Average' =0 and 'Ground_based'=0 ,True
+matching_conditions.sum()
+# Perform logical AND operation across the matching indices
+matching_conditions = (x > 0) & (y > 1)
+x = explore1.data.loc['2005-01-01':'2018-12-31', 'Precipitation']
+x.columns
+y = explore1.PISCO.loc['2005-01-01':'2018-12-31', 'precipitationCal']
+a = explore1.data['Precipitation'] > 0
+b = explore1.PISCO['precipitationCal'] > 1
+# Filter based on these conditions
+result = explore1.data[matching_conditions]
 
-summary_dictionary
-for data in summary_dictionary.values():
-    data['a'] = (data['Average'] > 1) & (data['station_groundbased'] > 0) 
-    data['b'] = (data['Average'] > 1) & (data['station_groundbased'] == 0)  #1mm threshold
-    data['c'] = (data['Average'] == 0) & (data['station_groundbased'] > 0) 
-    data['d'] = (data['Average'] == 0) & (data['station_groundbased'] > 0)
-for key, data in summary_dictionary.items():
-    # Count the number of True values in columns 'a', 'b', and 'c'
-    a_count = data['a'].sum()
-    b_count = data['b'].sum()
-    c_count = data['c'].sum()
-    
-    # Calculate the indicators
-    FBI = (a_count + b_count) / (a_count + c_count)
-    FAR = b_count / (a_count + c_count)
-    POD = a_count / (a_count + c_count)
-    
-    # Print or store the indicators
-    print(f"For {key}:")
-    print(f"FBI: {FBI}")
-    print(f"FAR: {FAR}")
-    print(f"POD: {POD}")
+fbi, far, pod, acc  = explore1._detection_capability('data','gwrGPM','2005-01-01','2018-12-31',min_obs_threshold = 1.0)

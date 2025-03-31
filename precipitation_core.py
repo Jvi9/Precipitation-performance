@@ -40,6 +40,7 @@ class Station():
         self.data = None
         self.rawGPM = None  # To contain the GPM raw data of the location
         self.gwrGPM = None  # To contain the GPM geographically weighted regression
+        self.exprGPM = None  # To contain the GPM exponential regression
         self.multiGPM = None # To contain the GPM multilinear regression
         self.rain4pe = None # To contain the rain4pe data
         self.PISCO = None # To contain PISCO data per pixel
@@ -171,7 +172,6 @@ class Station():
         Args:
             obs_attr (str): Attribute name for observed data.
             sim_attr (str): Attribute name for simulated data.
-            point_name (str): Name of the point/station being analyzed.
     
         Returns:
             tuple: PBIAS, MAE, RMSE values as floats.
@@ -220,6 +220,41 @@ class Station():
         print(f"RMSE is {rmse:.2f} in {point_name}")
     
         return pbias, mae, rmse
+    
+    def _detection_capability(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
+        """
+        Calculates # FBI|Frecuency bias index, FAR|False Alarm ratio,
+        POD|Probably of detection and accuracy between simulated and observed data.
+    
+        Args:
+            obs_attr (str): Attribute name for observed data.
+            sim_attr (str): Attribute name for simulated data.
+            min_obs_threshold (float): Min precipitation analyzed in simulations.
+    
+        Returns:
+            tuple: FBI, FAR, POD and Accuracy values as floats.
+        """
+        obs_data = getattr(self, obs_attr)
+        obs_data = obs_data.copy()
+        obs_data.index = pd.to_datetime(obs_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        obs_data = obs_data.loc[start_date:end_date, 'Precipitation']
+        
+        sim_data = getattr(self, sim_attr)
+        sim_data = sim_data.copy()
+        sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
+    
+        a = ((obs_data > 0) &  (sim_data >= min_obs_threshold)).sum()    # Satellite rain and gauge rain
+        b = ((obs_data == 0) &  (sim_data >= min_obs_threshold)).sum()
+        c = ((obs_data > 0) &  (sim_data == 0)).sum()
+        d = ((obs_data == 0) &  (sim_data == 0)).sum()
+        
+        FBI = (a + b) / (a + c)
+        FAR = (b) / (a + c)
+        POD = (a) / (a + c)
+        accuracy = (a + d) / (a + b + c +d)
+        print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
+        return FBI, FAR, POD, accuracy
 
         
 """ 
