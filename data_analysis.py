@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 
 # Care of this because its just how your terminal runs
@@ -232,9 +233,208 @@ def plot_1station_stats(df, colors=None):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.show()
+    
+def key_dicname(full_string:str)->str: #function to extract the keyname
+    extracted = full_string.replace("stats", "").replace("_dict", "")
+    return extracted
+
+def join_stats(list_of_dictionaries: [dict], metrics: list = None) -> pd.DataFrame:
+    """
+    Joins DataFrames created from a list of dictionaries by filtering specific metrics.
+    
+    Args:
+        list_of_dictionaries (list[dict]): A list of dictionary names containing data.
+        metrics (list): A list of metric names to filter the columns.
+                        Defaults to ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc'].
+    
+    Returns:
+        pd.DataFrame: A combined DataFrame with renamed and filtered columns.
+    """
+    # Set default metrics if none are provided
+    if metrics is None:
+        metrics = ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']
+    
+    di = pd.DataFrame()  # Initialize an empty DataFrame
+    
+    for item in list_of_dictionaries:
+        # Generate a DataFrame for the current dictionary
+        df = parameters_report(globals()[item])
+        
+        # Filter columns to only keep those in the metrics list
+        df = df[df.columns.intersection(metrics)]
+        
+        # Extract a meaningful name for renaming columns
+        name = key_dicname(item)
+        df = df.rename(columns=lambda col: f"{col}_{name}")
+        
+        # Concatenate the current DataFrame with the master DataFrame
+        di = pd.concat([di, df], axis=1)
+    
+    return di
+
+def heat_map(data: pd.DataFrame):
+    # Sort the columns alphabetically
+    data = data.sort_index(axis=1)
+    stations = data.index.tolist()
+    variables = data.columns.tolist()
+
+    # Create a subplot for each variable
+    fig, axes = plt.subplots(1, len(variables), figsize=(2 * len(variables), 12), sharey=True)
+
+    for i, var in enumerate(variables):
+        if 'fbi' in var:
+            # Custom discrete colors for FBI
+            colors = data[var].apply(lambda x: 'red' if x > 1 else ('blue' if x < 1 else 'green'))
+            # Add legend for FBI
+            fbi_legend = [
+                mpatches.Patch(color='red', label='FBI > 1'),
+                mpatches.Patch(color='blue', label='FBI < 1'),
+                mpatches.Patch(color='green', label='FBI = 1')
+            ]
+            axes[i].legend(handles=fbi_legend, loc='upper right', fontsize=8)
+        elif 'far' in var:
+            # Gradient (0 green to 1 red) for FAR
+            normalized_far = data[var] / data[var].max()  # Normalize FAR to [0, 1]
+            colors = [plt.cm.RdYlGn(1 - val) for val in normalized_far]
+            # Add legend for FAR
+            far_legend = [
+                mpatches.Patch(color='red', label='FAR = 1 (red)'),
+                mpatches.Patch(color='yellow', label='FAR = 0.5 (yellow)'),
+                mpatches.Patch(color='green', label='FAR = 0 (green)')
+            ]
+            axes[i].legend(handles=far_legend, loc='upper right', fontsize=8)
+        elif 'pod' in var:
+            # Gradient (0 red to 1 green) for POD
+            normalized_pod = data[var] / data[var].max()  # Normalize POD to [0, 1]
+            colors = [plt.cm.RdYlGn(val) for val in normalized_pod]
+            # Add legend for POD
+            pod_legend = [
+                mpatches.Patch(color='red', label='POD = 0 (red)'),
+                mpatches.Patch(color='yellow', label='POD = 0.5 (yellow)'),
+                mpatches.Patch(color='green', label='POD = 1 (green)')
+            ]
+            axes[i].legend(handles=pod_legend, loc='upper right', fontsize=8)
+        else:
+            # Default: No coloring
+            colors = 'gray'
+
+        # Plot the heatmap-like structure
+        axes[i].barh(stations, np.ones(len(stations)), color=colors)
+        axes[i].set_title(f'{var}')
+        axes[i].set_xlim(0, 1)
+        axes[i].set_xticks([])
+
+    plt.tight_layout()
+    plt.show()
+    
+def heat_map(data: pd.DataFrame):
+    # Sort the columns alphabetically
+    data = data.sort_index(axis=1)
+    stations = data.index.tolist()
+    variables = data.columns.tolist()
+
+    # Create a subplot for each variable
+    fig, axes = plt.subplots(1, len(variables), figsize=(2 * len(variables), 12), sharey=True)
+
+    for i, var in enumerate(variables):
+        if 'fbi' in var:
+            # Normalize values for FBI to range [0, 1]
+            normalized_fbi = (data[var] - 1).abs()  # Shift values around 1 to calculate absolute distance
+            normalized_fbi /= normalized_fbi.max()  # Normalize to [0, 1]
+
+            # Use coolwarm colormap (0 = blue, 1 = red)
+            colors = [plt.cm.coolwarm(val) if x != 1 else 'green' for x, val in zip(data[var], normalized_fbi)]
+
+            # Add legend for FBI
+            fbi_legend = [
+                mpatches.Patch(color='blue', label='FBI < 1 (blue)'),
+                mpatches.Patch(color='red', label='FBI > 1 (red)'),
+                mpatches.Patch(color='green', label='FBI = 1 (green)')
+            ]
+            axes[i].legend(handles=fbi_legend, loc='upper right', fontsize=8)
+
+        elif 'far' in var:
+            # Gradient (0 green to 1 red) for FAR
+            normalized_far = data[var] / data[var].max()  # Normalize FAR to [0, 1]
+            colors = [plt.cm.RdYlGn(1 - val) for val in normalized_far]
+            
+            # Add legend for FAR
+            far_legend = [
+                mpatches.Patch(color='red', label='FAR = 1 (red)'),
+                mpatches.Patch(color='yellow', label='FAR = 0.5 (yellow)'),
+                mpatches.Patch(color='green', label='FAR = 0 (green)')
+            ]
+            axes[i].legend(handles=far_legend, loc='upper right', fontsize=8)
+
+        elif 'pod' in var:
+            # Gradient (0 red to 1 green) for POD
+            normalized_pod = data[var] / data[var].max()  # Normalize POD to [0, 1]
+            colors = [plt.cm.RdYlGn(val) for val in normalized_pod]
+            
+            # Add legend for POD
+            pod_legend = [
+                mpatches.Patch(color='red', label='POD = 0 (red)'),
+                mpatches.Patch(color='yellow', label='POD = 0.5 (yellow)'),
+                mpatches.Patch(color='green', label='POD = 1 (green)')
+            ]
+            axes[i].legend(handles=pod_legend, loc='upper right', fontsize=8)
+
+        else:
+            # Default: No coloring
+            colors = 'gray'
+
+        # Plot the heatmap-like structure
+        axes[i].barh(stations, np.ones(len(stations)), color=colors)
+        axes[i].set_title(f'{var}')
+        axes[i].set_xlim(0, 1)
+        axes[i].set_xticks([])
+
+    plt.tight_layout()
+    plt.show()
+    
+def sort_altitude(stations: list, dictionary: dict) -> list:
+    """
+    Sorts station names based on their altitude in ascending order.
+    
+    Args:
+        stations (list): A list of station keys (names or identifiers) to be looked up in the dictionary.
+        dictionary (dict): A dictionary where the Station instances are stored, keyed by station names.
+        
+    Returns:
+        list: A list of station names sorted by altitude from minimum to maximum.
+    """
+    # Create a DataFrame to hold the altitudes and names
+    data = {'name': [], 'altitude': []}
+    
+    # Iterate through the station names
+    for station_key in stations:
+        station = dictionary[station_key]  # Retrieve the Station instance from the dictionary
+        data['name'].append(station.name)  # Assume Station class has a `name` attribute
+        data['altitude'].append(station.alt)  # Assume Station class has an `alt` attribute
+    
+    # Convert to a DataFrame
+    df = pd.DataFrame(data)
+    
+    # Sort the DataFrame by altitude
+    sorted_df = df.sort_values(by='altitude', ascending=True)
+    
+    # Return the sorted list of station names
+    return sorted_df['name'].tolist()
+        
 # =============================================================================
 # Code execution
 # =============================================================================
+""" I used this for a common analysis between stations to find a min threshold
+    time range for all stations in this case is '2005-01-01 00:00:00'
+list_mins = []
+for key in final_data.keys():
+    threshold_i=final_data[key].data.index.min()
+    threshold_f=final_data[key].data.index.max()
+    list_mins.append(threshold_i)
+    print(f'{threshold_i} and {threshold_f}')
+max(list_mins)
+"""
+
 set_pandas_time(final_data) # To set everything as the same index type
 
 #Runs all the scenarios
@@ -245,7 +445,7 @@ statsrain4pe_dict = raise_stats(statsrawGPM, final_data, 'data', 'rain4pe', '200
 """Pending to start the exponential regression"""
 
 #To visualize a report of one analysis for all the stations
-report_rawGPM = parameters_report(statsrawGPM_dict)
+report_rawGPM = parameters_report(statsgwrGPM_dict)
 
 #Calls one analysis stats
 Cajabamba = station_summary(statsrawGPM_dict['Crisnejas_ Cajabamba'], metrics = ['fbi', 'far', 'pod', 'acc'])
@@ -258,22 +458,17 @@ SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
 # warning: metrics_over_analysis have to be run before
 plot_1station_stats(SondorMatara)
 
+# Sorting the stations in function of altitude
+altitude_sort=sort_altitude(final_data.keys(), final_data)        
+
+#Call a fbi, far, pod 'heat' map over multiple analysis
+heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
+
+
 # =============================================================================
 # Play ground
 # =============================================================================
-""" I used this for a common analysis between stations to find a min threshold
-    time range for all stations in this case is '2005-01-01 00:00:00'
-"""
-list_mins = []
-for key in final_data.keys():
-    threshold_i=final_data[key].data.index.min()
-    threshold_f=final_data[key].data.index.max()
-    list_mins.append(threshold_i)
-    print(f'{threshold_i} and {threshold_f}')
-max(list_mins) #I used this for a common analysis between stations to find 
-               # in this case is '2005-01-01 00:00:00' givin a 
 
-#TESTING GRAPHS
 import geopandas as gpd
 from shapely.geometry import Point
 
@@ -306,3 +501,6 @@ plt.title(f'Color Map Accuracy {name}')
 plt.ylabel('Latitudes')
 plt.xlabel('Longitudes')
 plt.show()
+
+
+

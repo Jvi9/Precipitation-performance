@@ -394,19 +394,20 @@ def dict_data_filtered(data_dict: dict, years: int = 10):
 # =============================================================================
 # Command execution
 # =============================================================================
-"""
-    I am setting this convention in the DB, to be considered for the data filling
-    self.data = None, Data from ANA (Autoridad Nacional del Agua)
-    self.rawGPM = None, Data from GPM raw data of the location
-    self.gwrGPM = None, Data from GPM geographically weighted regression
-    self.multiGPM = None, Data from GPM multilinear regression
-    self.rain4pe = None, Data from rain4pe data
-    self.PISCO = None, Data from PISCO data 
-"""
-data_directory=os.path.join(r'C:\Users\jvila\Desktop\Andean_project\data').replace(os.sep, '/')
-
-stations = core_station_data(data_directory) #Set the folder where the ANA data is
-final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2000
+if __name__ == '__main__':
+    """
+        I am setting this convention in the DB, to be considered for the data filling
+        self.data = None, Data from ANA (Autoridad Nacional del Agua)
+        self.rawGPM = None, Data from GPM raw data of the location
+        self.gwrGPM = None, Data from GPM geographically weighted regression
+        self.multiGPM = None, Data from GPM multilinear regression
+        self.rain4pe = None, Data from rain4pe data
+        self.PISCO = None, Data from PISCO data 
+    """
+    data_directory=os.path.join(r'C:\Users\jvila\Desktop\Andean_project\data').replace(os.sep, '/')
+    
+    stations = core_station_data(data_directory) #Set the folder where the ANA data is
+    final_data = dict_data_filtered(stations, 18) # Set the #years to filter after 2000
         
 # Save selected stations to a kml file, Optional
 # save_path=r"C:\Users\jvila\Desktop\Andean_project\selected_stations_locations.kml"
