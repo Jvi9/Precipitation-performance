@@ -502,5 +502,20 @@ plt.ylabel('Latitudes')
 plt.xlabel('Longitudes')
 plt.show()
 
+#Do the graph 45 degrees to see how is the distribution
+final_data.keys()
+data = final_data['Perene_ Satipo']
+new = data.copy()
+new.time_selection('2005-01-01','2018-12-31')
+
+df = pd.concat([new.data,new.rain4pe], axis = 1)
+# Assuming 'df' is your DataFrame
+plt.figure(figsize=(8, 6))
+plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
+plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
+plt.xlabel('Precipitation', fontsize=12)
+plt.ylabel('PrecipitationCal', fontsize=12)
+plt.grid(True)
+plt.show()
 
 

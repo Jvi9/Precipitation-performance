@@ -48,6 +48,7 @@ class Station():
         self.__station_location()
         self.__station_data()
         
+        
     "Funtions for Precipitation Stations dataset from ANA"
     def __station_location(self):
         station=pd.read_excel(self.path+'/'+self.name+'.xlsx')
@@ -163,7 +164,49 @@ class Station():
         plt.xticks(rotation=45)
         plt.legend()
         plt.show()    
+    #Function to cut all the datasets according to a timerange
+    def time_selection(self, start_date, end_date):
+        # List of parameters to process
+        parameters = ['data', 'gwrGPM', 'rawGPM', 'multiGPM', 'rain4pe', 'expGPM', 'PISCO']
         
+        for parameter in parameters:
+            try:
+                if parameter == 'data':  # Process observed data
+                    obs_data = getattr(self, parameter)  # Access the attribute
+                    cut_data = obs_data.copy()
+                    cut_data.index = pd.to_datetime(obs_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                    cut_data = cut_data.loc[start_date:end_date, 'Precipitation']
+
+                    # Replace the original attribute with the updated data
+                    setattr(self, parameter, cut_data)
+
+                else:  # Process other parameters (simulated data)
+                    sim_data = getattr(self, parameter)  # Access the attribute
+                    cut_data = sim_data.copy()
+                    cut_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                    cut_data = cut_data.loc[start_date:end_date, 'precipitationCal']
+
+                    # Replace the original attribute with the updated data
+                    setattr(self, parameter, cut_data)
+            
+            except AttributeError:
+                # If the parameter attribute is not found, skip
+                print(f"Attribute for {parameter} not found, skipping...")
+
+    #Make a hard copy of the class
+    def copy(self):
+        # Create a new instance of the class, passing the required arguments
+        new_instance = Station(self.name, self.path)
+        
+        # Copy all attributes from the current instance to the new one
+        for attr, value in self.__dict__.items():
+            if isinstance(value, pd.DataFrame):  # Make a deep copy for DataFrames
+                new_instance.__dict__[attr] = value.copy()
+            else:  # Shallow copy for other types
+                new_instance.__dict__[attr] = value
+        
+        return new_instance
+    
     #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
     def _performance(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str):
         """
