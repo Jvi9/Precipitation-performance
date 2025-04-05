@@ -10,12 +10,22 @@ import pandas as pd
 import pickle
 
 # Care of this because its just how your terminal runs
-os.chdir(r"C:\Users\jvila\Desktop\Andean_project")
 
+# Jhon's WD: "C:\Users\jvila\Desktop\Andean_project"
+# Jose's WD: 'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
+
+wkDir = r'C:\Users\jvila\Desktop\Andean_project'
+os.chdir(wkDir)
+
+
+#
 """
     Raising final_data , Station class with the ANA data uploaded
     """
-save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data.pkl"
+
+final_data_file = "final_data.pkl"
+save_path = f"{wkDir}/final_data.pkl"
+
 # Load the dictionary from the specified path as final_data
 with open(save_path, 'rb') as file:
     final_data = pickle.load(file) 
