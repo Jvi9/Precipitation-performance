@@ -3,6 +3,11 @@
 Created on Sat Mar 29 20:28:06 2025
 
 @author: jvila
+
+Script to load datasets from different products for each station
+Saved in pickle: final_data_loaded.pkl
+
+Project: Evaluating precipitation datasets on the Andean region of Peru
 """
 import os
 import xarray as xr
@@ -14,7 +19,7 @@ import pickle
 # Jhon's WD: "C:\Users\jvila\Desktop\Andean_project"
 # Jose's WD: 'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
 
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
+wkDir = r'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
 os.chdir(wkDir)
 
 
@@ -24,7 +29,7 @@ os.chdir(wkDir)
     """
 
 final_data_file = "final_data.pkl"
-save_path = f"{wkDir}/final_data.pkl"
+save_path = f"{wkDir}/{final_data_file}"
 
 # Load the dictionary from the specified path as final_data
 with open(save_path, 'rb') as file:
@@ -111,25 +116,27 @@ def get_expGPM(dataset_path, stations_dictionary):
             selection = data_opened.sel(lat=station.lat, lon=station.lon, method='nearest')
             precipitation = selection.values
             timestamps = selection.time.values
-            df_dict[i] = pd.DataFrame({'precipitationCal': precipitation}, index=timestamps)
+            df_dict[i] = pd.DataFrame({'precip': precipitation}, index=timestamps)
         
         # Concatenate all DataFrames in the dictionary
         stations_dictionary[key].expGPM = pd.concat(df_dict.values())    
-        print(f'GWR data loaded for station {key}')
+        print(f'expGPM data loaded for station {key}')
     return    
 
 # =============================================================================
 # Code execution
 # =============================================================================
-get_PISCO(r'D:\Thesis_IUPWARE\Thesis file\2.0 Data\Input\PISCOp_daily.nc', final_data)
-get_rawGPM(r'D:\Thesis_IUPWARE\Thesis file\2.0 Data\Input\GPM_day_2000_2020.nc', final_data)
-get_gwrGPM(r"D:\Thesis_IUPWARE\Final_pp_daily", final_data)    
-get_rain4pe(r'C:\Users\jvila\Downloads\RAIN4PE_daily_0.1d_1981_2015_v1.0.nc', final_data)
+# get_PISCO(r'D:\Thesis_IUPWARE\Thesis file\2.0 Data\Input\PISCOp_daily.nc', final_data)
+# get_rawGPM(r'D:\Thesis_IUPWARE\Thesis file\2.0 Data\Input\GPM_day_2000_2020.nc', final_data)
+# get_gwrGPM(r"D:\Thesis_IUPWARE\Final_pp_daily", final_data)    
+# get_rain4pe(r'C:\Users\jvila\Downloads\RAIN4PE_daily_0.1d_1981_2015_v1.0.nc', final_data)
 #for jose to execute
-get_expGPM(r"C:\Users\joset\OneDrive - Vrije Universiteit Brussel\Paper_peru\data_jose\gpm_dwsc_daily", final_data)    
+expoGPM_path = r"D:\GPM_downscaled_peru\gpm_dwsc_daily"
+get_expGPM(expoGPM_path, final_data)    
 
 #Save the data selected for the study to not re-process it everytime
-save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data_loaded.pkl"
+final_data_loaded_file = "final_data_loaded.pkl"
+save_path = f"{wkDir}/{final_data_loaded_file}"
 with open(save_path, 'wb') as file:
     pickle.dump(final_data, file)
 print(f"Dictionary saved successfully to {save_path}!")

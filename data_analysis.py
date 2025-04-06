@@ -13,7 +13,9 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # Care of this because its just how your terminal runs
-os.chdir(r"C:\Users\jvila\Desktop\Andean_project")
+wkDir = ""
+#C:\Users\jvila\Desktop\Andean_project
+os.chdir(wkDir)
 
 """
     Raising final_data , Station class with the ANA data uploaded
@@ -26,35 +28,8 @@ print(f"Dictionary loaded successfully from {save_path}!")
 
 """Posible solution for the storage of all the statistics
     Obiously all the data are being compared to the observations""" 
-class statsPISCO():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
-        self.name = station_name
-        self.mae = mae
-        self.pbias = pbias
-        self.rmse = rmse
-        self.fbi = fbi
-        self.far = far
-        self.pod = pod
-        self.acc = acc
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-
-class statsrain4pe():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
-        self.name = station_name
-        self.mae = mae
-        self.pbias = pbias
-        self.rmse = rmse    
-        self.fbi = fbi
-        self.far = far
-        self.pod = pod
-        self.acc = acc
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
         
-class statsrawGPM():
+class productStats():
     def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
         self.name = station_name
         self.mae = mae
@@ -68,48 +43,6 @@ class statsrawGPM():
         self.lon = lon
         self.alt = alt
         
-class statsgwrGPM():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
-        self.name = station_name
-        self.mae = mae
-        self.pbias = pbias
-        self.rmse = rmse
-        self.fbi = fbi
-        self.far = far
-        self.pod = pod
-        self.acc = acc
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-        
-class statsdmultiGPM():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
-        self.name = station_name
-        self.mae = mae
-        self.pbias = pbias
-        self.rmse = rmse
-        self.fbi = fbi
-        self.far = far
-        self.pod = pod
-        self.acc = acc
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-
-class statsdexpGPM():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
-        self.name = station_name
-        self.mae = mae
-        self.pbias = pbias
-        self.rmse = rmse
-        self.fbi = fbi
-        self.far = far
-        self.pod = pod
-        self.acc = acc
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-
 def set_pandas_time(dictionary_of_stations):
     for key, station in dictionary_of_stations.items():  # Loop through each Station instance
         # Convert all relevant DataFrame indexes to pandas datetime
@@ -118,22 +51,21 @@ def set_pandas_time(dictionary_of_stations):
         station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         station.data.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.expGPM.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
     print("All datetime indexes migrated to pandas datetime format for all stations.")
         
 def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
     """
-    Uses the inherited methods from Stations Class to invoke all the stadistics
+    Uses the inherited methods from Stations Class to invoke all the statistics
     mae, pbias, rmse, fbi, far, pod and acc
     Args:
-        object_creating: Specific Class created to store the attribute
-                         choose from:  statsPISCO, statsrain4pe, statsrawGPM
-                         statsgwrGPM, statsdmultiGPM, statsdexpGPM
+        object_creating: Create instance of productStats class that has statistics as attributes
         obs_attr (str): Attribute name for observed data, usually as 'data'.
-        sim_attr (str): Attribute name for simulated data named in Station class.
+        sim_attr (str): Attribute name for simulated data named in Station class (The product).
         min_obs_threshold (float): Min precipitation analyzed in simulations in mm.
 
     Returns:
-        tuple: FBI, FAR, POD and Accuracy values as floats.
+        Dictionary with productStats instances that correspond to a product for each station
     """
     dummy_dictionary = {}
     
@@ -146,11 +78,10 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
         
     return dummy_dictionary
 
-
 def parameters_report(dictionary: dict):
     """
     Args:
-        dictionary: Dictionary full of stats?Class with the statistics as floats
+        dictionary: Dictionary full of stats for each Class with the statistics as floats
     Returns:
         A dataframe with the station names as index and the stats results as columns
     """
@@ -438,11 +369,11 @@ max(list_mins)
 set_pandas_time(final_data) # To set everything as the same index type
 
 #Runs all the scenarios
-statsrawGPM_dict = raise_stats(statsrawGPM, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsgwrGPM_dict = raise_stats(statsrawGPM, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsPISCO_dict = raise_stats(statsrawGPM, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsrain4pe_dict = raise_stats(statsrawGPM, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
-"""Pending to start the exponential regression"""
+statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsexpGPM_dict = raise_stats(productStats, final_data, 'data', 'expGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
 
 #To visualize a report of one analysis for all the stations
 report_rawGPM = parameters_report(statsgwrGPM_dict)
