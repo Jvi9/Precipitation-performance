@@ -13,14 +13,14 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # Care of this because its just how your terminal runs
-wkDir = ""
+wkDir = 'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
 #C:\Users\jvila\Desktop\Andean_project
+#'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
 os.chdir(wkDir)
 
-"""
-    Raising final_data , Station class with the ANA data uploaded
-    """
-save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data_loaded.pkl"
+#Raising final_data , Station class with the ANA data uploaded
+
+save_path = f"{wkDir}/final_data_loaded.pkl"
 # Load the dictionary from the specified path as final_data
 with open(save_path, 'rb') as file:
     final_data = pickle.load(file) 
@@ -46,12 +46,12 @@ class productStats():
 def set_pandas_time(dictionary_of_stations):
     for key, station in dictionary_of_stations.items():  # Loop through each Station instance
         # Convert all relevant DataFrame indexes to pandas datetime
-        station.rawGPM.index = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.gwrGPM.index = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # station.rawGPM.index = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # station.gwrGPM.index = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         station.data.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.expGPM.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.expGPM.index = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
     print("All datetime indexes migrated to pandas datetime format for all stations.")
         
 def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
@@ -369,84 +369,84 @@ max(list_mins)
 set_pandas_time(final_data) # To set everything as the same index type
 
 #Runs all the scenarios
-statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
+# statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+# statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+# statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
+# statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
 statsexpGPM_dict = raise_stats(productStats, final_data, 'data', 'expGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
 
 #To visualize a report of one analysis for all the stations
-report_rawGPM = parameters_report(statsgwrGPM_dict)
+report_rawGPM = parameters_report(statsexpGPM_dict)
 
-#Calls one analysis stats
-Cajabamba = station_summary(statsrawGPM_dict['Crisnejas_ Cajabamba'], metrics = ['fbi', 'far', 'pod', 'acc'])
+# #Calls one analysis stats
+# Cajabamba = station_summary(statsrawGPM_dict['Crisnejas_ Cajabamba'], metrics = ['fbi', 'far', 'pod', 'acc'])
 
-#Calls one station over multiple analysis 
-list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict']
-SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
+# #Calls one station over multiple analysis 
+# list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict']
+# SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
 
-# Calls a Station plot with all the stats | 
-# warning: metrics_over_analysis have to be run before
-plot_1station_stats(SondorMatara)
+# # Calls a Station plot with all the stats | 
+# # warning: metrics_over_analysis have to be run before
+# plot_1station_stats(SondorMatara)
 
-# Sorting the stations in function of altitude
-altitude_sort=sort_altitude(final_data.keys(), final_data)        
+# # Sorting the stations in function of altitude
+# altitude_sort=sort_altitude(final_data.keys(), final_data)        
 
-#Call a fbi, far, pod 'heat' map over multiple analysis
-heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
+# #Call a fbi, far, pod 'heat' map over multiple analysis
+# heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 
 
-# =============================================================================
-# Play ground
-# =============================================================================
+# # =============================================================================
+# # Play ground
+# # =============================================================================
 
-import geopandas as gpd
-from shapely.geometry import Point
+# import geopandas as gpd
+# from shapely.geometry import Point
 
-# Extract data (latitude, longitude, accuracy)
-lats = []  # Latitude values
-lons = []  # Longitude values
-accs = []  # Accuracy values
+# # Extract data (latitude, longitude, accuracy)
+# lats = []  # Latitude values
+# lons = []  # Longitude values
+# accs = []  # Accuracy values
 
-for key, lil in zip(stats_gwrGPM.keys(), final_data):
-    acc = stats_gwrGPM[key].acc
-    lat = final_data[lil].lat
-    lon = final_data[lil].lon
-    lats.append(lat)
-    lons.append(lon)
-    accs.append(acc)
+# for key, lil in zip(stats_gwrGPM.keys(), final_data):
+#     acc = stats_gwrGPM[key].acc
+#     lat = final_data[lil].lat
+#     lon = final_data[lil].lon
+#     lats.append(lat)
+#     lons.append(lon)
+#     accs.append(acc)
 
-# Create a GeoDataFrame
-name = 'stats_gwrGPM'
-geometry = [Point(lon, lat) for lon, lat in zip(lons, lats)]
-geo_df = gpd.GeoDataFrame({'accuracy': accs, 'geometry': geometry})  # Add accuracy as a column
+# # Create a GeoDataFrame
+# name = 'stats_gwrGPM'
+# geometry = [Point(lon, lat) for lon, lat in zip(lons, lats)]
+# geo_df = gpd.GeoDataFrame({'accuracy': accs, 'geometry': geometry})  # Add accuracy as a column
 
-# Plot the map with color representation for accuracy
-fig, ax = plt.subplots(figsize=(12, 8))
+# # Plot the map with color representation for accuracy
+# fig, ax = plt.subplots(figsize=(12, 8))
 
-# Use the GeoDataFrame to plot points with a color map
-geo_df.plot(ax=ax, column='accuracy', cmap='RdYlGn', markersize=50, legend=True)
+# # Use the GeoDataFrame to plot points with a color map
+# geo_df.plot(ax=ax, column='accuracy', cmap='RdYlGn', markersize=50, legend=True)
 
-# Add labels and title
-plt.title(f'Color Map Accuracy {name}')
-plt.ylabel('Latitudes')
-plt.xlabel('Longitudes')
-plt.show()
+# # Add labels and title
+# plt.title(f'Color Map Accuracy {name}')
+# plt.ylabel('Latitudes')
+# plt.xlabel('Longitudes')
+# plt.show()
 
-#Do the graph 45 degrees to see how is the distribution
-final_data.keys()
-data = final_data['Perene_ Satipo']
-new = data.copy()
-new.time_selection('2005-01-01','2018-12-31')
+# #Do the graph 45 degrees to see how is the distribution
+# final_data.keys()
+# data = final_data['Perene_ Satipo']
+# new = data.copy()
+# new.time_selection('2005-01-01','2018-12-31')
 
-df = pd.concat([new.data,new.rain4pe], axis = 1)
-# Assuming 'df' is your DataFrame
-plt.figure(figsize=(8, 6))
-plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
-plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
-plt.xlabel('Precipitation', fontsize=12)
-plt.ylabel('PrecipitationCal', fontsize=12)
-plt.grid(True)
-plt.show()
+# df = pd.concat([new.data,new.rain4pe], axis = 1)
+# # Assuming 'df' is your DataFrame
+# plt.figure(figsize=(8, 6))
+# plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
+# plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
+# plt.xlabel('Precipitation', fontsize=12)
+# plt.ylabel('PrecipitationCal', fontsize=12)
+# plt.grid(True)
+# plt.show()
 
 
