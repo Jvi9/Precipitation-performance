@@ -4,27 +4,12 @@ Created on Sun Mar 30 18:30:21 2025
 
 @author: jvila
 """
-
 import os
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
-
-# Care of this because its just how your terminal runs
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-#C:\Users\jvila\Desktop\Andean_project
-#'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
-os.chdir(wkDir)
-
-#Raising final_data , Station class with the ANA data uploaded
-
-save_path = f"{wkDir}/data_locked_loaded.pkl"
-# Load the dictionary from the specified path as final_data
-with open(save_path, 'rb') as file:
-    final_data = pickle.load(file) 
-print(f"Dictionary loaded successfully from {save_path}!")
 
 # =============================================================================
 """Posible solution for the storage of all the statistics
@@ -204,60 +189,60 @@ def join_stats(list_of_dictionaries: [dict], metrics: list = None) -> pd.DataFra
     
     return di
 
-def heat_map(data: pd.DataFrame):
-    # Sort the columns alphabetically
-    data = data.sort_index(axis=1)
-    stations = data.index.tolist()
-    variables = data.columns.tolist()
+# def heat_map(data: pd.DataFrame):
+#     # Sort the columns alphabetically
+#     data = data.sort_index(axis=1)
+#     stations = data.index.tolist()
+#     variables = data.columns.tolist()
 
-    # Create a subplot for each variable
-    fig, axes = plt.subplots(1, len(variables), figsize=(2 * len(variables), 12), sharey=True)
+#     # Create a subplot for each variable
+#     fig, axes = plt.subplots(1, len(variables), figsize=(2 * len(variables), 12), sharey=True)
 
-    for i, var in enumerate(variables):
-        if 'fbi' in var:
-            # Custom discrete colors for FBI
-            colors = data[var].apply(lambda x: 'red' if x > 1 else ('blue' if x < 1 else 'green'))
-            # Add legend for FBI
-            fbi_legend = [
-                mpatches.Patch(color='red', label='FBI > 1'),
-                mpatches.Patch(color='blue', label='FBI < 1'),
-                mpatches.Patch(color='green', label='FBI = 1')
-            ]
-            axes[i].legend(handles=fbi_legend, loc='upper right', fontsize=8)
-        elif 'far' in var:
-            # Gradient (0 green to 1 red) for FAR
-            normalized_far = data[var] / data[var].max()  # Normalize FAR to [0, 1]
-            colors = [plt.cm.RdYlGn(1 - val) for val in normalized_far]
-            # Add legend for FAR
-            far_legend = [
-                mpatches.Patch(color='red', label='FAR = 1 (red)'),
-                mpatches.Patch(color='yellow', label='FAR = 0.5 (yellow)'),
-                mpatches.Patch(color='green', label='FAR = 0 (green)')
-            ]
-            axes[i].legend(handles=far_legend, loc='upper right', fontsize=8)
-        elif 'pod' in var:
-            # Gradient (0 red to 1 green) for POD
-            normalized_pod = data[var] / data[var].max()  # Normalize POD to [0, 1]
-            colors = [plt.cm.RdYlGn(val) for val in normalized_pod]
-            # Add legend for POD
-            pod_legend = [
-                mpatches.Patch(color='red', label='POD = 0 (red)'),
-                mpatches.Patch(color='yellow', label='POD = 0.5 (yellow)'),
-                mpatches.Patch(color='green', label='POD = 1 (green)')
-            ]
-            axes[i].legend(handles=pod_legend, loc='upper right', fontsize=8)
-        else:
-            # Default: No coloring
-            colors = 'gray'
+#     for i, var in enumerate(variables):
+#         if 'fbi' in var:
+#             # Custom discrete colors for FBI
+#             colors = data[var].apply(lambda x: 'red' if x > 1 else ('blue' if x < 1 else 'green'))
+#             # Add legend for FBI
+#             fbi_legend = [
+#                 mpatches.Patch(color='red', label='FBI > 1'),
+#                 mpatches.Patch(color='blue', label='FBI < 1'),
+#                 mpatches.Patch(color='green', label='FBI = 1')
+#             ]
+#             axes[i].legend(handles=fbi_legend, loc='upper right', fontsize=8)
+#         elif 'far' in var:
+#             # Gradient (0 green to 1 red) for FAR
+#             normalized_far = data[var] / data[var].max()  # Normalize FAR to [0, 1]
+#             colors = [plt.cm.RdYlGn(1 - val) for val in normalized_far]
+#             # Add legend for FAR
+#             far_legend = [
+#                 mpatches.Patch(color='red', label='FAR = 1 (red)'),
+#                 mpatches.Patch(color='yellow', label='FAR = 0.5 (yellow)'),
+#                 mpatches.Patch(color='green', label='FAR = 0 (green)')
+#             ]
+#             axes[i].legend(handles=far_legend, loc='upper right', fontsize=8)
+#         elif 'pod' in var:
+#             # Gradient (0 red to 1 green) for POD
+#             normalized_pod = data[var] / data[var].max()  # Normalize POD to [0, 1]
+#             colors = [plt.cm.RdYlGn(val) for val in normalized_pod]
+#             # Add legend for POD
+#             pod_legend = [
+#                 mpatches.Patch(color='red', label='POD = 0 (red)'),
+#                 mpatches.Patch(color='yellow', label='POD = 0.5 (yellow)'),
+#                 mpatches.Patch(color='green', label='POD = 1 (green)')
+#             ]
+#             axes[i].legend(handles=pod_legend, loc='upper right', fontsize=8)
+#         else:
+#             # Default: No coloring
+#             colors = 'gray'
 
-        # Plot the heatmap-like structure
-        axes[i].barh(stations, np.ones(len(stations)), color=colors)
-        axes[i].set_title(f'{var}')
-        axes[i].set_xlim(0, 1)
-        axes[i].set_xticks([])
+#         # Plot the heatmap-like structure
+#         axes[i].barh(stations, np.ones(len(stations)), color=colors)
+#         axes[i].set_title(f'{var}')
+#         axes[i].set_xlim(0, 1)
+#         axes[i].set_xticks([])
 
-    plt.tight_layout()
-    plt.show()
+#     plt.tight_layout()
+#     plt.show()
     
 def heat_map(data: pd.DataFrame):
     # Sort the columns alphabetically
@@ -479,10 +464,23 @@ for key in final_data.keys():
     print(f'{threshold_i} and {threshold_f}')
 max(list_mins)
 """
+# Calling the data with all dataset sources.
+# Care of this because its just how your terminal runs
+wkDir = r'C:\Users\jvila\Desktop\Andean_project'
+#C:\Users\jvila\Desktop\Andean_project
+#'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
+os.chdir(wkDir)
 
-# set_pandas_time(final_data) # To set everything as the same index type
+#Raising final_data , Station class with the ANA data uploaded
 
-#Runs all the scenarios
+save_path = f"{wkDir}/data_locked_loaded.pkl"
+# Load the dictionary from the specified path as final_data
+with open(save_path, 'rb') as file:
+    final_data = pickle.load(file) 
+print(f"Dictionary loaded successfully from {save_path}!")
+
+    
+#Runs all the scenarios and gets the statistics
 statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
 statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
 statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
@@ -514,11 +512,12 @@ acumulate_comparison(final_data, 'Mantaro_ Junin', 'monthly', '2005-01-01','2018
 acumulate_comparison(final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
 acumulate_comparison(final_data, 'Mantaro_ Junin', 'both', '2005-01-01','2018-12-31')
 acumulate_comparison(final_data, 'Crisnejas_ Sondor-Matara', 'both', '2005-01-01','2018-12-31')
+acumulate_comparison(final_data, 'Mantaro_ Carhuacayan', 'both', '2005-01-01','2018-12-31')
 
 # # =============================================================================
 # # Play ground
 # # =============================================================================
-
+#WE NEED TO BUILD A GEOMAP GRAPH
 # import geopandas as gpd
 # from shapely.geometry import Point
 
@@ -551,3 +550,31 @@ acumulate_comparison(final_data, 'Crisnejas_ Sondor-Matara', 'both', '2005-01-01
 # plt.ylabel('Latitudes')
 # plt.xlabel('Longitudes')
 # plt.show()
+
+# Improving the readibility
+# # set_pandas_time(final_data) # To set everything as the same index type
+# def run_all_stats(final_data, data_field: str, start_date: str, end_date: str, min_obs_threshold=1):
+#     """
+#     Runs statistics for multiple products and returns a dictionary of results.
+
+#     Parameters:
+#         final_data (dict): Dictionary containing the data for stations.
+#         data_field (str): Name of the main field ('data') to compare against other products.
+#         start_date (str): Start date for the analysis.
+#         end_date (str): End date for the analysis.
+#         min_obs_threshold (int, optional): Minimum observation threshold. Default is 1.
+
+#     Returns:
+#         dict: A dictionary containing results for all products.
+#     """
+#     products = ['rawGPM', 'gwrGPM', 'PISCO', 'rain4pe', 'expGPM']
+#     stats_dict = {}
+
+#     for product in products:
+#         stats_dict[product] = raise_stats(productStats, final_data, data_field, product, start_date, end_date, min_obs_threshold)
+
+#     return stats_dict
+
+# final_stats = run_all_stats(final_data, 'data', '2005-01-01', '2018-12-31', min_obs_threshold=1)
+# print(final_stats['rawGPM'])  # Access the stats for 'rawGPM'
+# print(final_stats['PISCO'])  # Access the stats for 'PISCO'
