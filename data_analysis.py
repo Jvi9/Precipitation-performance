@@ -370,31 +370,32 @@ max(list_mins)
 # set_pandas_time(final_data) # To set everything as the same index type
 
 #Runs all the scenarios
-# statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-# statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-# statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
-# statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
+statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
 statsexpGPM_dict = raise_stats(productStats, final_data, 'data', 'expGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
 
 #To visualize a report of one analysis for all the stations
-report_rawGPM = parameters_report(statsexpGPM_dict)
+report_expGPM = parameters_report(statsexpGPM_dict)
+report_rawGPM = parameters_report(statsrawGPM_dict)
 
 # #Calls one analysis stats
 # Cajabamba = station_summary(statsrawGPM_dict['Crisnejas_ Cajabamba'], metrics = ['fbi', 'far', 'pod', 'acc'])
 
 # #Calls one station over multiple analysis 
-# list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict']
-# SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
+list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']
+SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
 
 # # Calls a Station plot with all the stats | 
 # # warning: metrics_over_analysis have to be run before
-# plot_1station_stats(SondorMatara)
+plot_1station_stats(SondorMatara)
 
 # # Sorting the stations in function of altitude
-# altitude_sort=sort_altitude(final_data.keys(), final_data)        
+altitude_sort=sort_altitude(final_data.keys(), final_data)        
 
 # #Call a fbi, far, pod 'heat' map over multiple analysis
-# heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
+heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 
 
 # # =============================================================================
@@ -434,14 +435,13 @@ report_rawGPM = parameters_report(statsexpGPM_dict)
 # plt.xlabel('Longitudes')
 # plt.show()
 
-<<<<<<< HEAD
 #Do the graph 45 degrees to see how is the distribution
 final_data.keys()
 data = final_data['Mantaro_ Junin']
 new = data.copy()
 new.time_selection('2005-01-01','2018-12-31')
 
-df = pd.concat([new.data,new.PISCO,new.rain4pe,new.rawGPM,new.gwrGPM], axis = 1)
+df = pd.concat([new.data,new.PISCO,new.rain4pe,new.rawGPM,new.gwrGPM,new.expGPM], axis = 1)
 # Assuming 'df' is your DataFrame
 # Calculate the minimum and maximum values for the range
 min_value = min(df['Precipitation'].min(), df['precipitationCal'].min())
@@ -476,7 +476,6 @@ plt.show()
 # plt.ylabel('PrecipitationCal', fontsize=12)
 # plt.grid(True)
 # plt.show()
->>>>>>> 4b93a952529f60f46694d9a28d4b2b27e7acb8dd
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -488,7 +487,7 @@ df.sum() # Fijarse en cantidades acumuladas como de diferentes son de las observ
 axes = df.plot(subplots=True, figsize=(10, 12), title=f"Precipitation Data {new.name}")
 
 # Add labels to each subplot
-labels = ['observations', 'PISCO', 'rain4pe', 'GPM' , 'GWR GPM']  # Customize these labels as needed
+labels = ['observations', 'PISCO', 'rain4pe', 'GPM' , 'GWR GPM','exp GPM']  # Customize these labels as needed
 for ax, label in zip(axes, labels):
     ax.set_title(label)
 
