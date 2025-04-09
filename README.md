@@ -1,6 +1,8 @@
+
 <h3>Evaluating Precipitation Datasets in the Andes of Peru</h3>
+
+## Data sources:
 ```
-Data sources:
 - ANA data for ground based stations
 - PISCO
 - RAIN4PE
@@ -20,6 +22,7 @@ precipitation-performance/
 ├── data_locked_loaded.pkl      # Contains ground station information in csv
 ├── all_stations_locations.kml  # all the stations in the area
 ├── selected_stations.kml       # stations kml multipoint file filtered
+```
 
 ## Preview view: multipoint maps
 <img src="https://github.com/user-attachments/assets/9ba6cc9b-9694-41a0-b658-8d2b7b0be9de" width="150">
