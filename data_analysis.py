@@ -504,18 +504,44 @@ plt.show()
 
 #Do the graph 45 degrees to see how is the distribution
 final_data.keys()
-data = final_data['Perene_ Satipo']
+data = final_data['Mantaro_ Junin']
 new = data.copy()
 new.time_selection('2005-01-01','2018-12-31')
 
-df = pd.concat([new.data,new.rain4pe], axis = 1)
+df = pd.concat([new.data,new.PISCO,new.rain4pe,new.rawGPM,new.gwrGPM], axis = 1)
 # Assuming 'df' is your DataFrame
+# Calculate the minimum and maximum values for the range
+min_value = min(df['Precipitation'].min(), df['precipitationCal'].min())
+max_value = max(df['Precipitation'].max(), df['precipitationCal'].max())
+
+# Update the plot code
 plt.figure(figsize=(8, 6))
 plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
 plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
 plt.xlabel('Precipitation', fontsize=12)
 plt.ylabel('PrecipitationCal', fontsize=12)
+
+# Explicitly force the axis limits (no padding added)
+# plt.axis([min_value, max_value, min_value, max_value])
+plt.axis([0, 10, 0, 10])
+
 plt.grid(True)
 plt.show()
 
+import pandas as pd
+import matplotlib.pyplot as plt
+df = df.applymap(lambda x: float(x) if isinstance(x, str) else x)
 
+stats=df.describe()
+df.sum() # Fijarse en cantidades acumuladas como de diferentes son de las observaciones
+# Plot each column in the DataFrame as subplots
+axes = df.plot(subplots=True, figsize=(10, 12), title=f"Precipitation Data {new.name}")
+
+# Add labels to each subplot
+labels = ['observations', 'PISCO', 'rain4pe', 'GPM' , 'GWR GPM']  # Customize these labels as needed
+for ax, label in zip(axes, labels):
+    ax.set_title(label)
+
+# Adjust layout for better appearance
+plt.tight_layout()
+plt.show()

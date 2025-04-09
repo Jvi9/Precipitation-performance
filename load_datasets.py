@@ -116,7 +116,7 @@ get_rawGPM(r'D:\Thesis_IUPWARE\Thesis file\2.0 Data\Input\GPM_day_2000_2020.nc',
 get_gwrGPM(r"D:\Thesis_IUPWARE\Final_pp_daily", final_data)    
 get_rain4pe(r'C:\Users\jvila\Downloads\RAIN4PE_daily_0.1d_1981_2015_v1.0.nc', final_data)
 #for jose to execute
-get_gwrGPM(r"D:\XXXXXX\Final_pp_daily in a folder", final_data)    
+get_expGPM(r"D:\XXXXXX\Final_pp_daily in a folder", final_data)    
 
 #Save the data selected for the study to not re-process it everytime
 save_path = r"C:\Users\jvila\Desktop\Andean_project\final_data_loaded.pkl"
