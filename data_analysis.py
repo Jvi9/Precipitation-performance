@@ -352,7 +352,120 @@ def sort_altitude(stations: list, dictionary: dict) -> list:
     
     # Return the sorted list of station names
     return sorted_df['name'].tolist()
+
+def acumulate_comparison(station_dict, station_name: str, plotfrequency: str, start_date: str, end_date: str) -> None:
+    """
+    Generates visual representations (graphs) comparing monthly and/or yearly data
+    for the specified station.
+
+    Parameters:
+        station_dict (dict): Station data dictionary containing daily values.
+        station_name (str): Name of the station for comparison.
+        plotfrequency (str): Frequency of the plot - 'monthly', 'yearly', or 'both'.
+
+    Returns:
+        None
+    """
+    # Prepare the data
+    new_data = station_dict[station_name].copy()
+    new_data.time_selection(start_date, end_date)
+
+    parse_list = ['observations', 'PISCO', 'Rain4pe', 'rawGPM', 'gwrGPM', 'expGPM']
+    df = pd.concat([new_data.data, new_data.PISCO, new_data.rain4pe, new_data.rawGPM,
+                    new_data.gwrGPM, new_data.expGPM], axis=1)
+    df.columns = parse_list
+    df = df.applymap(lambda x: float(x) if isinstance(x, str) else x)
+
+    # Resample for monthly and yearly data
+    monthly_df = df.resample('ME').sum()
+    yearly_df = df.resample('YE').sum()
+
+    # Create combined plot for both
+    if plotfrequency == 'both':
+        x_monthly = monthly_df['observations']
+        x_yearly = yearly_df['observations']
+        y_columns = ['PISCO', 'Rain4pe', 'rawGPM', 'gwrGPM', 'expGPM']
+        num_cols = len(y_columns)
+    
+        fig, axes = plt.subplots(nrows=2, ncols=num_cols, figsize=(8 * num_cols, 12), constrained_layout=True)
         
+        fig.suptitle(f'Station {station_name.capitalize()} Data Comparison', fontsize=16, y=1.01)
+        # Plot monthly data (first row)
+        for i, col in enumerate(y_columns):
+            y_monthly = monthly_df[col]
+            axes[0, i].scatter(x_monthly, y_monthly, alpha=0.7, edgecolors='b')
+            axes[0, i].set_title(f'Monthly - Observation vs {col}', fontsize=14)
+            axes[0, i].set_xlabel('Observations', fontsize=12)
+            axes[0, i].set_ylabel(col, fontsize=12)
+            axes[0, i].grid(True)
+    
+            # Add 45-degree line
+            min_val = min(x_monthly.min(), y_monthly.min())
+            max_val = max(x_monthly.max(), y_monthly.max())
+            axes[0, i].plot([min_val, max_val], [min_val, max_val], color='gray', linestyle='--', label='45-degree line')
+            axes[0, i].legend()
+    
+        # Plot yearly data (second row)
+        for i, col in enumerate(y_columns):
+            y_yearly = yearly_df[col]
+            axes[1, i].scatter(x_yearly, y_yearly, alpha=0.7, edgecolors='r')
+            axes[1, i].set_title(f'Yearly - Observation vs {col}', fontsize=14)
+            axes[1, i].set_xlabel('Observations', fontsize=12)
+            axes[1, i].set_ylabel(col, fontsize=12)
+            axes[1, i].grid(True)
+    
+            # Add 45-degree line
+            min_val = min(x_yearly.min(), y_yearly.min())
+            max_val = max(x_yearly.max(), y_yearly.max())
+            axes[1, i].plot([min_val, max_val], [min_val, max_val], color='gray', linestyle='--', label='45-degree line')
+            axes[1, i].legend()
+    
+        plt.show()
+
+    elif plotfrequency == 'monthly':
+        # Plot only monthly data
+        create_iso_plot(monthly_df, 'monthly', station_name)
+
+    elif plotfrequency == 'yearly':
+        # Plot only yearly data
+        create_iso_plot(yearly_df, 'yearly', station_name)
+
+    else:
+        raise ValueError("Invalid frequency. Choose from 'monthly', 'yearly', or 'both'.")
+
+def create_iso_plot(df, plot_type:str,station_name:str):
+    """
+    Helper function to create single-row subplots for individual frequencies with a 45-degree reference line.
+    """
+    x = df['observations']
+    y_columns = ['PISCO', 'Rain4pe', 'rawGPM', 'gwrGPM', 'expGPM']
+    num_cols = len(y_columns)
+
+    # Create subplots
+    fig, axes = plt.subplots(nrows=1, ncols=num_cols, figsize=(8 * num_cols, 8), constrained_layout=True)
+    
+    fig.suptitle(f'Station {station_name.capitalize()} Data Comparison', fontsize=16, y=1.02)
+
+    for i, col in enumerate(y_columns):
+        y = df[col]
+        # Create scatter plot
+        axes[i].scatter(x, y, alpha=0.7, edgecolors='b')
+        axes[i].set_title(f'{plot_type.capitalize()} - Observation vs {col}', fontsize=14)
+        axes[i].set_xlabel('Observations', fontsize=12)
+        axes[i].set_ylabel(col, fontsize=12)
+        axes[i].grid(True)
+
+        # Add 45-degree line
+        # Ensure min and max values are valid (no NaN)
+        min_val = min(x.min(), y.min())
+        max_val = max(x.max(), y.max())
+        if pd.notnull(min_val) and pd.notnull(max_val):
+            axes[i].plot([min_val, max_val], [min_val, max_val], color='gray', linestyle='--', label='45-degree line')
+            axes[i].legend()
+        else:
+            print(f"Skipping 45-degree line for {col} due to invalid min/max values.")
+
+    plt.show()  
 # =============================================================================
 # Code execution
 # =============================================================================
@@ -397,6 +510,10 @@ altitude_sort=sort_altitude(final_data.keys(), final_data)
 # #Call a fbi, far, pod 'heat' map over multiple analysis
 heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 
+acumulate_comparison(final_data, 'Mantaro_ Junin', 'monthly', '2005-01-01','2018-12-31')
+acumulate_comparison(final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
+acumulate_comparison(final_data, 'Mantaro_ Junin', 'both', '2005-01-01','2018-12-31')
+acumulate_comparison(final_data, 'Crisnejas_ Sondor-Matara', 'both', '2005-01-01','2018-12-31')
 
 # # =============================================================================
 # # Play ground
@@ -434,63 +551,3 @@ heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 # plt.ylabel('Latitudes')
 # plt.xlabel('Longitudes')
 # plt.show()
-
-#Do the graph 45 degrees to see how is the distribution
-final_data.keys()
-data = final_data['Mantaro_ Junin']
-new = data.copy()
-new.time_selection('2005-01-01','2018-12-31')
-
-df = pd.concat([new.data,new.PISCO,new.rain4pe,new.rawGPM,new.gwrGPM,new.expGPM], axis = 1)
-# Assuming 'df' is your DataFrame
-# Calculate the minimum and maximum values for the range
-min_value = min(df['Precipitation'].min(), df['precipitationCal'].min())
-max_value = max(df['Precipitation'].max(), df['precipitationCal'].max())
-
-# Update the plot code
-plt.figure(figsize=(8, 6))
-plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
-plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
-plt.xlabel('Precipitation', fontsize=12)
-plt.ylabel('PrecipitationCal', fontsize=12)
-
-# Explicitly force the axis limits (no padding added)
-# plt.axis([min_value, max_value, min_value, max_value])
-plt.axis([0, 10, 0, 10])
-
-plt.grid(True)
-plt.show()
-=======
-# #Do the graph 45 degrees to see how is the distribution
-# final_data.keys()
-# data = final_data['Perene_ Satipo']
-# new = data.copy()
-# new.time_selection('2005-01-01','2018-12-31')
-
-# df = pd.concat([new.data,new.rain4pe], axis = 1)
-# # Assuming 'df' is your DataFrame
-# plt.figure(figsize=(8, 6))
-# plt.scatter(df['Precipitation'], df['precipitationCal'], alpha=0.7, edgecolors='b')
-# plt.title('Scatter Plot: Precipitation vs PrecipitationCal', fontsize=14)
-# plt.xlabel('Precipitation', fontsize=12)
-# plt.ylabel('PrecipitationCal', fontsize=12)
-# plt.grid(True)
-# plt.show()
-
-import pandas as pd
-import matplotlib.pyplot as plt
-df = df.applymap(lambda x: float(x) if isinstance(x, str) else x)
-
-stats=df.describe()
-df.sum() # Fijarse en cantidades acumuladas como de diferentes son de las observaciones
-# Plot each column in the DataFrame as subplots
-axes = df.plot(subplots=True, figsize=(10, 12), title=f"Precipitation Data {new.name}")
-
-# Add labels to each subplot
-labels = ['observations', 'PISCO', 'rain4pe', 'GPM' , 'GWR GPM','exp GPM']  # Customize these labels as needed
-for ax, label in zip(axes, labels):
-    ax.set_title(label)
-
-# Adjust layout for better appearance
-plt.tight_layout()
-plt.show()
