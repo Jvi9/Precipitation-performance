@@ -13,19 +13,20 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 # Care of this because its just how your terminal runs
-wkDir = 'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
+wkDir = r'C:\Users\jvila\Desktop\Andean_project'
 #C:\Users\jvila\Desktop\Andean_project
 #'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
 os.chdir(wkDir)
 
 #Raising final_data , Station class with the ANA data uploaded
 
-save_path = f"{wkDir}/final_data_loaded.pkl"
+save_path = f"{wkDir}/data_locked_loaded.pkl"
 # Load the dictionary from the specified path as final_data
 with open(save_path, 'rb') as file:
     final_data = pickle.load(file) 
 print(f"Dictionary loaded successfully from {save_path}!")
 
+# =============================================================================
 """Posible solution for the storage of all the statistics
     Obiously all the data are being compared to the observations""" 
         
@@ -366,7 +367,7 @@ for key in final_data.keys():
 max(list_mins)
 """
 
-set_pandas_time(final_data) # To set everything as the same index type
+# set_pandas_time(final_data) # To set everything as the same index type
 
 #Runs all the scenarios
 # statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
