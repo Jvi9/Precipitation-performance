@@ -10,6 +10,8 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import simplekml
+
 # import geopandas as gpd
 # from shapely.geometry import Polygon
 # from tqdm import tqdm  #status bar
@@ -28,7 +30,6 @@ from datetime import datetime, timedelta
 # import pysal
 # import rioxarray
 # from shapely.geometry import mapping
-import simplekml
 
 class Station(): 
     def __init__(self, name, file_path):
@@ -210,59 +211,73 @@ class Station():
     #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
     def _performance(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str):
         """
-        Calculates PBIAS, MAE, and RMSE between simulated and observed data.
+        Calculates PBIAS, MAE, RMSE, R, and KGE between simulated and observed data.
     
         Args:
             obs_attr (str): Attribute name for observed data.
             sim_attr (str): Attribute name for simulated data.
+            start_date (str): Start date of the period.
+            end_date (str): End date of the period.
     
         Returns:
-            tuple: PBIAS, MAE, RMSE values as floats.
+            tuple: PBIAS, MAE, RMSE, R, KGE values as floats.
         """
-        obs_data = getattr(self, obs_attr)
-        obs_data = obs_data.copy()
+        import numpy as np
+        import pandas as pd
+    
+        obs_data = getattr(self, obs_attr).copy()
         obs_data.index = pd.to_datetime(obs_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        # obs_data = obs_data.dropna(subset=['index'])  # Remove rows with invalid datetime conversion
         obs_data = obs_data.loc[start_date:end_date, 'Precipitation']
-        
-        sim_data = getattr(self, sim_attr)
-        sim_data = sim_data.copy()
+    
+        sim_data = getattr(self, sim_attr).copy()
         sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        # sim_data = obs_data.dropna(subset=['index'])  # Remove rows with invalid datetime conversion
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
-
+    
         print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+        
+        point_name = self.name
     
-        point_name = self.name    
-        # Fetch attributes dynamically
-    
-        # Ensure the data has valid entries
-        mask = obs_data.notna()
-        sim_data = sim_data[mask]
+        # Filter valid values
+        mask = obs_data.notna() & sim_data.notna()
         obs_data = obs_data[mask]
+        sim_data = sim_data[mask]
     
-        # PBIAS Calculation
-        numerator = (sim_data - obs_data).sum()
-        denominator = obs_data.sum()
-
-        pbias = (numerator / denominator) * 100
-        pbias = pbias.item() if isinstance(pbias, pd.Series) else float(pbias)  # Ensure float type
+        # PBIAS
+        pbias = ((sim_data - obs_data).sum() / obs_data.sum()) * 100
+        pbias = float(pbias)
     
-        # MAE Calculation
-        mae = (abs(sim_data - obs_data)).mean()
-        mae = mae.item() if isinstance(mae, pd.Series) else float(mae)  # Ensure float type
+        # MAE
+        mae = abs(sim_data - obs_data).mean()
+        mae = float(mae)
     
-        # RMSE Calculation
-        squared_diff = (sim_data - obs_data) ** 2
-        # rmse = np.sqrt(squared_diff.mean().iloc[0])   # Explicitly convert mean to float
-        rmse = np.sqrt(squared_diff.mean())   # Explicitly convert mean to float
+        # RMSE
+        rmse = np.sqrt(((sim_data - obs_data) ** 2).mean())
         rmse = float(rmse)
-        # Print the results
+    
+        # Pearson R
+        r = sim_data.corr(obs_data)
+        r = float(r)
+    
+        # KGE
+        mean_sim = sim_data.mean()
+        mean_obs = obs_data.mean()
+        std_sim = sim_data.std()
+        std_obs = obs_data.std()
+    
+        beta = mean_sim / mean_obs #bias ratio
+        gamma = (std_sim / mean_sim) / (std_obs / mean_obs) #variability ratio
+        kge = 1 - np.sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
+        kge = float(kge)
+    
+        # Print results
         print(f"PBIAS is {pbias:.2f} in {point_name}")
         print(f"MAE is {mae:.2f} in {point_name}")
         print(f"RMSE is {rmse:.2f} in {point_name}")
+        print(f"R is {r:.2f} in {point_name}")
+        print(f"KGE is {kge:.2f} in {point_name}")
     
-        return pbias, mae, rmse
+        return pbias, mae, rmse, r, kge
+
     
     def _detection_capability(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
         """
@@ -287,15 +302,15 @@ class Station():
         sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
     
-        a = ((obs_data > 0) &  (sim_data >= min_obs_threshold)).sum()    # Satellite rain and gauge rain
-        b = ((obs_data == 0) &  (sim_data >= min_obs_threshold)).sum()
-        c = ((obs_data > 0) &  (sim_data == 0)).sum()
-        d = ((obs_data == 0) &  (sim_data == 0)).sum()
+        hits = ((obs_data > 0) &  (sim_data >= min_obs_threshold)).sum()    # Satellite rain and gauge rain
+        false_alarms = ((obs_data == 0) &  (sim_data >= min_obs_threshold)).sum()
+        misses = ((obs_data > 0) &  (sim_data == 0)).sum()
+        correct_negatives = ((obs_data == 0) &  (sim_data == 0)).sum()
         
-        FBI = (a + b) / (a + c)
-        FAR = (b) / (a + c)
-        POD = (a) / (a + c)
-        accuracy = (a + d) / (a + b + c +d)
+        FBI = (hits + false_alarms) / (hits + misses)
+        FAR = (false_alarms) / (hits + false_alarms)
+        POD = (hits) / (hits + misses)
+        accuracy = (hits + correct_negatives) / (hits + false_alarms + misses +correct_negatives)
         print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
         return FBI, FAR, POD, accuracy
 

@@ -16,11 +16,13 @@ import numpy as np
     Obiously all the data are being compared to the observations""" 
         
 class productStats():
-    def __init__(self, station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt):
+    def __init__(self, station_name, mae, pbias, rmse,r, kge, fbi, far, pod, acc, lat, lon, alt):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
+        self.r = r
+        self.kge = kge
         self.fbi = fbi
         self.far = far
         self.pod = pod
@@ -57,10 +59,10 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
     
     for key in dictionary.keys():
         station_name = key
-        pbias, mae, rmse = dictionary[key]._performance(obs_attr, sim_attr, start_date, end_date)
+        pbias, mae, rmse, r, kge = dictionary[key]._performance(obs_attr, sim_attr, start_date, end_date)
         fbi, far, pod, acc  = dictionary[key]._detection_capability(obs_attr, sim_attr, start_date, end_date, min_obs_threshold)
         lat, lon, alt = dictionary[key].lat, final_data[key].lon, final_data[key].alt
-        dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, fbi, far, pod, acc, lat, lon, alt)
+        dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, fbi, far, pod, acc, lat, lon, alt)
         
     return dummy_dictionary
 
@@ -74,7 +76,7 @@ def parameters_report(dictionary: dict):
     # Collect all summaries dynamically
     combined_summary = pd.DataFrame({
         metric: [getattr(dictionary[key], metric) for key in dictionary.keys()]
-        for metric in ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']  # Add more metrics here as needed
+        for metric in ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']  # Add more metrics here as needed
     }, index=list(dictionary.keys()))
     
     return combined_summary
@@ -85,7 +87,7 @@ def station_summary(dictionary: dict, metrics: list = None):
     =['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']"""
 
     if metrics is None:
-        metrics = ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']
+        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
     # Dynamically create a DataFrame for all specified metrics
     
     summary = pd.DataFrame({
@@ -162,14 +164,14 @@ def join_stats(list_of_dictionaries: [dict], metrics: list = None) -> pd.DataFra
     Args:
         list_of_dictionaries (list[dict]): A list of dictionary names containing data.
         metrics (list): A list of metric names to filter the columns.
-                        Defaults to ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc'].
+                        Defaults to ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc'].
     
     Returns:
         pd.DataFrame: A combined DataFrame with renamed and filtered columns.
     """
     # Set default metrics if none are provided
     if metrics is None:
-        metrics = ['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']
+        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
     
     di = pd.DataFrame()  # Initialize an empty DataFrame
     
@@ -578,3 +580,130 @@ acumulate_comparison(final_data, 'Mantaro_ Carhuacayan', 'both', '2005-01-01','2
 # final_stats = run_all_stats(final_data, 'data', '2005-01-01', '2018-12-31', min_obs_threshold=1)
 # print(final_stats['rawGPM'])  # Access the stats for 'rawGPM'
 # print(final_stats['PISCO'])  # Access the stats for 'PISCO'
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import rasterio
+from scipy.ndimage import gaussian_filter
+
+# Load the DEM data from the TIFF file
+tiff_file = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_1km_res.tif'   # Replace with the path to your TIFF file
+with rasterio.open(tiff_file) as src:
+    dem_data = src.read(1)  # Read the first band (altitudes)
+    transform = src.transform  # Get the transformation metadata
+
+# Smooth the DEM data using Gaussian filter
+sigma = 10  # Adjust sigma value to control smoothing level
+smoothed_dem_data = gaussian_filter(dem_data, sigma=sigma)
+
+# Create the coordinates (X, Y) based on the transform
+rows, cols = smoothed_dem_data.shape
+x = np.linspace(transform[2], transform[2] + transform[0] * cols, cols)
+y = np.linspace(transform[5], transform[5] + transform[4] * rows, rows)
+X, Y = np.meshgrid(x, y)
+
+# Create a 3D plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Surface plot representation
+surf = ax.plot_surface(X, Y, smoothed_dem_data, cmap='terrain', edgecolor='none')
+
+# Add color bar for reference (optional)
+color_bar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+color_bar.set_label('Altitude (meters)')
+
+# Set labels and title
+ax.set_xlabel('Longitude')
+ax.set_ylabel('Latitude')
+ax.set_zlabel('Altitude')
+ax.set_title('Smoothed 3D Surface Plot of DEM')
+
+# Show the plot
+plt.show()
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Create a sample GeoDataFrame with multipoints and additional fields
+data = {
+    'Longitude': [2.3522, -3.7038, 4.8357, -0.1278],  # Example longitudes
+    'Latitude': [48.8566, 40.4168, 45.7640, 51.5074],  # Example latitudes
+    'Population': [2148000, 3223000, 513300, 8982000],  # Size field
+    'Elevation': [35, 667, 162, 11]  # Color field
+}
+
+# Convert to a GeoDataFrame
+gdf = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data['Longitude'], data['Latitude']))
+
+# Plot the data
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Use 'Population' for marker size and 'Elevation' for color
+gdf.plot(
+    ax=ax,
+    markersize=gdf['Population'] / 10000,  # Scale the population for size
+    column='Elevation',  # Use the Elevation column for color mapping
+    cmap='viridis',  # Colormap for the Elevation field
+    legend=True  # Add a legend for the colormap
+)
+
+# Add labels and title
+ax.set_title('Map with Multipoints (Size & Color Differentiators)', fontsize=14)
+ax.set_xlabel('Longitude')
+ax.set_ylabel('Latitude')
+
+# Show the plot
+plt.show()
+
+import matplotlib.pyplot as plt
+
+def plot_probability_graph(data_dict, pod_columnx='pod', far_columny='far'):
+    """
+    Plots multiple datasets on the same graph, differentiating them by color and legend.
+    
+    Parameters:
+    - data_dict: A dictionary where keys are dataset labels and values are DataFrames containing the data.
+    - pod_column: Name of the column representing POD values.
+    - far_column: Name of the column representing FAR values.
+    """
+    # Define colors for different datasets
+    colors = ['green', 'blue', 'red', 'orange', 'purple']
+    
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    
+    # Iterate over the datasets and plot each
+    for i, (label, data) in enumerate(data_dict.items()):
+        if i >= len(colors):  # In case there are more datasets than colors
+            color = 'gray'  # Default to gray
+        else:
+            color = colors[i]
+        
+        pod = data[pod_columnx].tolist()
+        far = data[far_columny].tolist()
+        
+        plt.scatter(pod, far, color=color, label=label, alpha=0.8)  # Scatter plot for each dataset
+    
+    # Customize the graph
+    plt.xlabel(f'{pod_columnx}')
+    plt.ylabel(f'{far_columny}')
+    plt.title('Detection capabilities in all stations')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+# Example Usage
+# Assuming parameters_report(statsPISCO_dict), parameters_report(statsgwrGPM_dict), etc., return DataFrames
+data_dict = {
+    'Dataset 1: statsPISCO': parameters_report(statsPISCO_dict),
+    'Dataset 2: statsgwrGPM': parameters_report(statsgwrGPM_dict),
+    'Dataset 3: statsexpGPM': parameters_report(statsexpGPM_dict),
+    'Dataset 4: statsrawGPM': parameters_report(statsrawGPM_dict),
+    'Dataset 5: statsrain4pe': parameters_report(statsrain4pe_dict)
+    }
+
+plot_probability_graph(data_dict)
+plot_probability_graph(data_dict, pod_columnx='r', far_columny='rmse')
