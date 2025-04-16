@@ -1,13 +1,15 @@
 
 <h2>Evaluating Precipitation Datasets in the Andes of Peru</h2>
+<h4>Data Sources:</h4>
+<ul>
+  <li>ANA (Autoridad Nacional del Agua) – Ground-based stations</li>
+  <li>PISCO – High-resolution gridded precipitation dataset</li>
+  <li>RAIN4PE – Rainfall estimates for Peru</li>
+  <li>GPM – NASA's Global Precipitation Measurement</li>
+  <li>GPM Downscaled with Geographically Weighted Regression</li>
+  <li>GPM Downscaled with Exponential Regression</li>
+</ul>
 
-<h4> Data sources:</h4>
-- ANA data for ground based stations
-- PISCO
-- RAIN4PE
-- GPM
-- GPM Downscaled with geographical weighted regression
-- GPM Downscaled with exponential regression
 
 ```
 Schema of the code
