@@ -61,7 +61,7 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
         station_name = key
         pbias, mae, rmse, r, kge = dictionary[key]._performance(obs_attr, sim_attr, start_date, end_date)
         fbi, far, pod, acc  = dictionary[key]._detection_capability(obs_attr, sim_attr, start_date, end_date, min_obs_threshold)
-        lat, lon, alt = dictionary[key].lat, final_data[key].lon, final_data[key].alt
+        lat, lon, alt = dictionary[key].lat, dictionary[key].lon, dictionary[key].alt
         dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, fbi, far, pod, acc, lat, lon, alt)
         
     return dummy_dictionary
@@ -96,9 +96,10 @@ def station_summary(dictionary: dict, metrics: list = None):
     }, index=[dictionary.name])
     return summary
 
-def metrics_over_analysis(list_of_dictionaries: list, station_name: str):
+def metrics_over_analysis(station_name:str, list_of_dictionaries: list = None):
     station_over_analysis = {}
-    
+    if list_of_dictionaries is None:
+        list_of_dictionaries = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']
     for item in list_of_dictionaries:
         # Access the dictionary object by its variable name
         try:
@@ -453,257 +454,264 @@ def create_iso_plot(df, plot_type:str,station_name:str):
             print(f"Skipping 45-degree line for {col} due to invalid min/max values.")
 
     plt.show()  
-# =============================================================================
-# Code execution
-# =============================================================================
-""" I used this for a common analysis between stations to find a min threshold
-    time range for all stations in this case is '2005-01-01 00:00:00'
-list_mins = []
-for key in final_data.keys():
-    threshold_i=final_data[key].data.index.min()
-    threshold_f=final_data[key].data.index.max()
-    list_mins.append(threshold_i)
-    print(f'{threshold_i} and {threshold_f}')
-max(list_mins)
-"""
-# Calling the data with all dataset sources.
-# Care of this because its just how your terminal runs
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-#C:\Users\jvila\Desktop\Andean_project
-#'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
-os.chdir(wkDir)
 
-#Raising final_data , Station class with the ANA data uploaded
-
-save_path = f"{wkDir}/data_locked_loaded.pkl"
-# Load the dictionary from the specified path as final_data
-with open(save_path, 'rb') as file:
-    final_data = pickle.load(file) 
-print(f"Dictionary loaded successfully from {save_path}!")
-
+class Generator():
+    def __init__(self, load_data_path:str, min_range:str, max_range:str, min_threshold:float)->None:
+        self.load_data_path = load_data_path
+        self.min_threshold = min_threshold
+        self.min_range = min_range
+        self.max_range = max_range
+        
+        self._load_data()
+        self._run_scenarios()
+    def _load_data(self):
+        # Load the dictionary from the specified path as final_data
+        with open(self.load_data_path, 'rb') as file:
+            final_data = pickle.load(file) 
+            self.final_data = final_data
+        print(f"Dictionary loaded successfully from {self.load_data_path}!")
     
-#Runs all the scenarios and gets the statistics
-statsrawGPM_dict = raise_stats(productStats, final_data, 'data', 'rawGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsgwrGPM_dict = raise_stats(productStats, final_data, 'data', 'gwrGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsPISCO_dict = raise_stats(productStats, final_data, 'data', 'PISCO', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsrain4pe_dict = raise_stats(productStats, final_data, 'data', 'rain4pe', '2005-01-01','2018-12-31', min_obs_threshold=1)
-statsexpGPM_dict = raise_stats(productStats, final_data, 'data', 'expGPM', '2005-01-01','2018-12-31', min_obs_threshold=1)
+    def _run_scenarios(self):
+        self.statsrawGPM_dict = raise_stats(productStats, self.final_data, 'data', 'rawGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsgwrGPM_dict = raise_stats(productStats, self.final_data, 'data', 'gwrGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsPISCO_dict = raise_stats(productStats, self.final_data, 'data', 'PISCO', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsrain4pe_dict = raise_stats(productStats, self.final_data, 'data', 'rain4pe', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsexpGPM_dict = raise_stats(productStats, self.final_data, 'data', 'expGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
 
-#To visualize a report of one analysis for all the stations
-report_expGPM = parameters_report(statsexpGPM_dict)
-report_rawGPM = parameters_report(statsrawGPM_dict)
 
-# #Calls one analysis stats
-# Cajabamba = station_summary(statsrawGPM_dict['Crisnejas_ Cajabamba'], metrics = ['fbi', 'far', 'pod', 'acc'])
+    def plot_probability_graph(self, pod_columnx='pod', far_columny='far'):
+        """
+        Plots multiple datasets on the same graph, differentiating them by color and legend.
+        
+        Parameters:
+        - data_dict: A dictionary where keys are dataset labels and values are DataFrames containing the data.
+        - pod_column: Name of the column representing POD values.
+        - far_column: Name of the column representing FAR values.
+        """
+        data_dict = {
+            'Dataset 1: statsPISCO': parameters_report(self.statsPISCO_dict),
+            'Dataset 2: statsgwrGPM': parameters_report(self.statsgwrGPM_dict),
+            'Dataset 3: statsexpGPM': parameters_report(self.statsexpGPM_dict),
+            'Dataset 4: statsrawGPM': parameters_report(self.statsrawGPM_dict),
+            'Dataset 5: statsrain4pe': parameters_report(self.statsrain4pe_dict)
+            }
+        
+        # Define colors for different datasets
+        colors = ['green', 'blue', 'red', 'orange', 'purple']
+        
+        # Create the plot
+        plt.figure(figsize=(10, 6))
+        
+        # Iterate over the datasets and plot each
+        for i, (label, data) in enumerate(data_dict.items()):
+            if i >= len(colors):  # In case there are more datasets than colors
+                color = 'gray'  # Default to gray
+            else:
+                color = colors[i]
+            
+            pod = data[pod_columnx].tolist()
+            far = data[far_columny].tolist()
+            
+            plt.scatter(pod, far, color=color, label=label, alpha=0.8)  # Scatter plot for each dataset
+        
+        # Customize the graph
+        plt.xlabel(f'{pod_columnx}')
+        plt.ylabel(f'{far_columny}')
+        plt.title(f'Detection capabilities in all stations {self.min_threshold} threshold')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+   
+    def metrics_over_analysis(self, station_name: str, list_of_dictionaries: list = None):
+        station_over_analysis = {}
+        
+        # Default to specific class attributes if no list is provided
+        if list_of_dictionaries is None:
+            list_of_dictionaries = [
+                'statsrawGPM_dict',
+                'statsgwrGPM_dict',
+                'statsPISCO_dict',
+                'statsrain4pe_dict',
+                'statsexpGPM_dict'
+            ]
+        
+        for item in list_of_dictionaries:
+            # Access the dictionary object as an attribute of the class
+            try:
+                dictionary = getattr(self, item)  # Retrieve the dictionary attribute by name
+                source = dictionary[station_name]  # Access the dictionary's value by station name
+            except AttributeError:
+                raise AttributeError(f"'{item}' is not a valid attribute of the class.")
+            except KeyError:
+                raise KeyError(f"Station name '{station_name}' not found in '{item}' dictionary.")
+            except TypeError:
+                raise TypeError(f"'{item}' is not a valid dictionary or does not contain the required station name.")
+    
+            # Generate the summary using the provided function
+            summary = station_summary(source)
+            station_over_analysis[item] = summary  # Store the summary in the result dictionary
+    
+        # Combine data into a single DataFrame
+        data_joined = pd.concat(station_over_analysis, names=['Key'])
+        data_joined.reset_index(level=0, inplace=True)
+    
+        return data_joined
+    
+    def join_stats(self, list_of_dictionaries: list = None, metrics: list = None) -> pd.DataFrame:
+        """
+        Joins DataFrames created from a list of class attributes (dictionaries) by filtering specific metrics.
+        
+        Args:
+            list_of_dictionaries (list[str]): A list of attribute names referring to dictionaries in the class.
+            metrics (list): A list of metric names to filter the columns.
+                            Defaults to ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc'].
+        
+        Returns:
+            pd.DataFrame: A combined DataFrame with renamed and filtered columns.
+        """
+        # Default to specific class attributes if no list is provided
+        if list_of_dictionaries is None:
+            list_of_dictionaries = [
+                'statsrawGPM_dict',
+                'statsgwrGPM_dict',
+                'statsPISCO_dict',
+                'statsrain4pe_dict',
+                'statsexpGPM_dict'
+            ]
+            
+        # Set default metrics if none are provided
+        if metrics is None:
+            metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
+        
+        di = pd.DataFrame()  # Initialize an empty DataFrame
+        
+        for item in list_of_dictionaries:
+            # Access the dictionary attribute dynamically using getattr
+            try:
+                dictionary = getattr(self, item)  # Retrieve dictionary from class attributes
+                df = parameters_report(dictionary)  # Generate DataFrame from the dictionary
+            except AttributeError:
+                raise AttributeError(f"'{item}' is not a valid attribute of the class.")
+            except TypeError:
+                raise TypeError(f"'{item}' is not a valid dictionary or does not contain the required data.")
+            
+            # Filter columns to only keep those in the metrics list
+            df = df[df.columns.intersection(metrics)]
+            
+            # Extract a meaningful name for renaming columns
+            name = key_dicname(item)
+            df = df.rename(columns=lambda col: f"{col}_{name}")
+            
+            # Concatenate the current DataFrame with the master DataFrame
+            di = pd.concat([di, df], axis=1)
+        
+        return di
+# # # =============================================================================
+# # # Play ground
+# # # =============================================================================
 
-# #Calls one station over multiple analysis 
-list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']
-SondorMatara=metrics_over_analysis(list_of_dict, 'Crisnejas_ Sondor-Matara')
+# # Calling the data with all dataset sources.
+# # Care of this because its just how your terminal runs
+# wkDir = r'C:\Users\jvila\Desktop\Andean_project'
+# #C:\Users\jvila\Desktop\Andean_project
+# #'C:\\Users\\joset\\OneDrive - Vrije Universiteit Brussel\\Paper_peru\\Precipitation-performance\\Precipitation-performance'
+# os.chdir(wkDir)
 
-# # Calls a Station plot with all the stats | 
-# # warning: metrics_over_analysis have to be run before
-plot_1station_stats(SondorMatara)
+# #Raising final_data , Station class with the ANA data uploaded
 
-# # Sorting the stations in function of altitude
-altitude_sort=sort_altitude(final_data.keys(), final_data)        
+# save_path = f"{wkDir}/data_locked_loaded.pkl"
+# # Load the dictionary from the specified path as final_data
+# with open(save_path, 'rb') as file:
+#     final_data = pickle.load(file) 
+# print(f"Dictionary loaded successfully from {save_path}!")
 
-# #Call a fbi, far, pod 'heat' map over multiple analysis
-heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 
-acumulate_comparison(final_data, 'Mantaro_ Junin', 'monthly', '2005-01-01','2018-12-31')
-acumulate_comparison(final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
-acumulate_comparison(final_data, 'Mantaro_ Junin', 'both', '2005-01-01','2018-12-31')
-acumulate_comparison(final_data, 'Crisnejas_ Sondor-Matara', 'both', '2005-01-01','2018-12-31')
-acumulate_comparison(final_data, 'Mantaro_ Carhuacayan', 'both', '2005-01-01','2018-12-31')
+# # # Calls a Station plot with all the stats | 
+# # # warning: metrics_over_analysis have to be run before
+# plot_1station_stats(SondorMatara)
 
-# # =============================================================================
-# # Play ground
-# # =============================================================================
-#WE NEED TO BUILD A GEOMAP GRAPH
-# import geopandas as gpd
-# from shapely.geometry import Point
+# # # Sorting the stations in function of altitude
+# altitude_sort=sort_altitude(final_data.keys(), final_data)        
 
-# # Extract data (latitude, longitude, accuracy)
-# lats = []  # Latitude values
-# lons = []  # Longitude values
-# accs = []  # Accuracy values
+# # #Call a fbi, far, pod 'heat' map over multiple analysis
+# heat_map(join_stats(list_of_dict, ['fbi', 'far', 'pod']).reindex(altitude_sort))
 
-# for key, lil in zip(stats_gwrGPM.keys(), final_data):
-#     acc = stats_gwrGPM[key].acc
-#     lat = final_data[lil].lat
-#     lon = final_data[lil].lon
-#     lats.append(lat)
-#     lons.append(lon)
-#     accs.append(acc)
+# acumulate_comparison(final_data, 'Mantaro_ Junin', 'monthly', '2005-01-01','2018-12-31')
 
-# # Create a GeoDataFrame
-# name = 'stats_gwrGPM'
-# geometry = [Point(lon, lat) for lon, lat in zip(lons, lats)]
-# geo_df = gpd.GeoDataFrame({'accuracy': accs, 'geometry': geometry})  # Add accuracy as a column
 
-# # Plot the map with color representation for accuracy
-# fig, ax = plt.subplots(figsize=(12, 8))
 
-# # Use the GeoDataFrame to plot points with a color map
-# geo_df.plot(ax=ax, column='accuracy', cmap='RdYlGn', markersize=50, legend=True)
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import rasterio
+# from scipy.ndimage import gaussian_filter
 
-# # Add labels and title
-# plt.title(f'Color Map Accuracy {name}')
-# plt.ylabel('Latitudes')
-# plt.xlabel('Longitudes')
+# # Load the DEM data from the TIFF file
+# tiff_file = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_1km_res.tif'   # Replace with the path to your TIFF file
+# with rasterio.open(tiff_file) as src:
+#     dem_data = src.read(1)  # Read the first band (altitudes)
+#     transform = src.transform  # Get the transformation metadata
+
+# # Smooth the DEM data using Gaussian filter
+# sigma = 10  # Adjust sigma value to control smoothing level
+# smoothed_dem_data = gaussian_filter(dem_data, sigma=sigma)
+
+# # Create the coordinates (X, Y) based on the transform
+# rows, cols = smoothed_dem_data.shape
+# x = np.linspace(transform[2], transform[2] + transform[0] * cols, cols)
+# y = np.linspace(transform[5], transform[5] + transform[4] * rows, rows)
+# X, Y = np.meshgrid(x, y)
+
+# # Create a 3D plot
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+
+# # Surface plot representation
+# surf = ax.plot_surface(X, Y, smoothed_dem_data, cmap='terrain', edgecolor='none')
+
+# # Add color bar for reference (optional)
+# color_bar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+# color_bar.set_label('Altitude (meters)')
+
+# # Set labels and title
+# ax.set_xlabel('Longitude')
+# ax.set_ylabel('Latitude')
+# ax.set_zlabel('Altitude')
+# ax.set_title('Smoothed 3D Surface Plot of DEM')
+
+# # Show the plot
 # plt.show()
 
-# Improving the readibility
-# # set_pandas_time(final_data) # To set everything as the same index type
-# def run_all_stats(final_data, data_field: str, start_date: str, end_date: str, min_obs_threshold=1):
-#     """
-#     Runs statistics for multiple products and returns a dictionary of results.
+# import geopandas as gpd
+# import matplotlib.pyplot as plt
 
-#     Parameters:
-#         final_data (dict): Dictionary containing the data for stations.
-#         data_field (str): Name of the main field ('data') to compare against other products.
-#         start_date (str): Start date for the analysis.
-#         end_date (str): End date for the analysis.
-#         min_obs_threshold (int, optional): Minimum observation threshold. Default is 1.
+# # Create a sample GeoDataFrame with multipoints and additional fields
+# data = {
+#     'Longitude': [2.3522, -3.7038, 4.8357, -0.1278],  # Example longitudes
+#     'Latitude': [48.8566, 40.4168, 45.7640, 51.5074],  # Example latitudes
+#     'Population': [2148000, 3223000, 513300, 8982000],  # Size field
+#     'Elevation': [35, 667, 162, 11]  # Color field
+# }
 
-#     Returns:
-#         dict: A dictionary containing results for all products.
-#     """
-#     products = ['rawGPM', 'gwrGPM', 'PISCO', 'rain4pe', 'expGPM']
-#     stats_dict = {}
+# # Convert to a GeoDataFrame
+# gdf = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data['Longitude'], data['Latitude']))
 
-#     for product in products:
-#         stats_dict[product] = raise_stats(productStats, final_data, data_field, product, start_date, end_date, min_obs_threshold)
+# # Plot the data
+# fig, ax = plt.subplots(figsize=(10, 6))
 
-#     return stats_dict
+# # Use 'Population' for marker size and 'Elevation' for color
+# gdf.plot(
+#     ax=ax,
+#     markersize=gdf['Population'] / 10000,  # Scale the population for size
+#     column='Elevation',  # Use the Elevation column for color mapping
+#     cmap='viridis',  # Colormap for the Elevation field
+#     legend=True  # Add a legend for the colormap
+# )
 
-# final_stats = run_all_stats(final_data, 'data', '2005-01-01', '2018-12-31', min_obs_threshold=1)
-# print(final_stats['rawGPM'])  # Access the stats for 'rawGPM'
-# print(final_stats['PISCO'])  # Access the stats for 'PISCO'
+# # Add labels and title
+# ax.set_title('Map with Multipoints (Size & Color Differentiators)', fontsize=14)
+# ax.set_xlabel('Longitude')
+# ax.set_ylabel('Latitude')
 
+# # Show the plot
+# plt.show()
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-import rasterio
-from scipy.ndimage import gaussian_filter
-
-# Load the DEM data from the TIFF file
-tiff_file = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_1km_res.tif'   # Replace with the path to your TIFF file
-with rasterio.open(tiff_file) as src:
-    dem_data = src.read(1)  # Read the first band (altitudes)
-    transform = src.transform  # Get the transformation metadata
-
-# Smooth the DEM data using Gaussian filter
-sigma = 10  # Adjust sigma value to control smoothing level
-smoothed_dem_data = gaussian_filter(dem_data, sigma=sigma)
-
-# Create the coordinates (X, Y) based on the transform
-rows, cols = smoothed_dem_data.shape
-x = np.linspace(transform[2], transform[2] + transform[0] * cols, cols)
-y = np.linspace(transform[5], transform[5] + transform[4] * rows, rows)
-X, Y = np.meshgrid(x, y)
-
-# Create a 3D plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# Surface plot representation
-surf = ax.plot_surface(X, Y, smoothed_dem_data, cmap='terrain', edgecolor='none')
-
-# Add color bar for reference (optional)
-color_bar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-color_bar.set_label('Altitude (meters)')
-
-# Set labels and title
-ax.set_xlabel('Longitude')
-ax.set_ylabel('Latitude')
-ax.set_zlabel('Altitude')
-ax.set_title('Smoothed 3D Surface Plot of DEM')
-
-# Show the plot
-plt.show()
-
-import geopandas as gpd
-import matplotlib.pyplot as plt
-
-# Create a sample GeoDataFrame with multipoints and additional fields
-data = {
-    'Longitude': [2.3522, -3.7038, 4.8357, -0.1278],  # Example longitudes
-    'Latitude': [48.8566, 40.4168, 45.7640, 51.5074],  # Example latitudes
-    'Population': [2148000, 3223000, 513300, 8982000],  # Size field
-    'Elevation': [35, 667, 162, 11]  # Color field
-}
-
-# Convert to a GeoDataFrame
-gdf = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data['Longitude'], data['Latitude']))
-
-# Plot the data
-fig, ax = plt.subplots(figsize=(10, 6))
-
-# Use 'Population' for marker size and 'Elevation' for color
-gdf.plot(
-    ax=ax,
-    markersize=gdf['Population'] / 10000,  # Scale the population for size
-    column='Elevation',  # Use the Elevation column for color mapping
-    cmap='viridis',  # Colormap for the Elevation field
-    legend=True  # Add a legend for the colormap
-)
-
-# Add labels and title
-ax.set_title('Map with Multipoints (Size & Color Differentiators)', fontsize=14)
-ax.set_xlabel('Longitude')
-ax.set_ylabel('Latitude')
-
-# Show the plot
-plt.show()
-
-import matplotlib.pyplot as plt
-
-def plot_probability_graph(data_dict, pod_columnx='pod', far_columny='far'):
-    """
-    Plots multiple datasets on the same graph, differentiating them by color and legend.
-    
-    Parameters:
-    - data_dict: A dictionary where keys are dataset labels and values are DataFrames containing the data.
-    - pod_column: Name of the column representing POD values.
-    - far_column: Name of the column representing FAR values.
-    """
-    # Define colors for different datasets
-    colors = ['green', 'blue', 'red', 'orange', 'purple']
-    
-    # Create the plot
-    plt.figure(figsize=(10, 6))
-    
-    # Iterate over the datasets and plot each
-    for i, (label, data) in enumerate(data_dict.items()):
-        if i >= len(colors):  # In case there are more datasets than colors
-            color = 'gray'  # Default to gray
-        else:
-            color = colors[i]
-        
-        pod = data[pod_columnx].tolist()
-        far = data[far_columny].tolist()
-        
-        plt.scatter(pod, far, color=color, label=label, alpha=0.8)  # Scatter plot for each dataset
-    
-    # Customize the graph
-    plt.xlabel(f'{pod_columnx}')
-    plt.ylabel(f'{far_columny}')
-    plt.title('Detection capabilities in all stations')
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-# Example Usage
-# Assuming parameters_report(statsPISCO_dict), parameters_report(statsgwrGPM_dict), etc., return DataFrames
-data_dict = {
-    'Dataset 1: statsPISCO': parameters_report(statsPISCO_dict),
-    'Dataset 2: statsgwrGPM': parameters_report(statsgwrGPM_dict),
-    'Dataset 3: statsexpGPM': parameters_report(statsexpGPM_dict),
-    'Dataset 4: statsrawGPM': parameters_report(statsrawGPM_dict),
-    'Dataset 5: statsrain4pe': parameters_report(statsrain4pe_dict)
-    }
-
-plot_probability_graph(data_dict)
-plot_probability_graph(data_dict, pod_columnx='r', far_columny='rmse')
