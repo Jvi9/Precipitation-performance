@@ -43,7 +43,7 @@ station_test = generator_test.metrics_over_analysis('Crisnejas_ Sondor-Matara')
 plot_1station_stats(station_test)
 
 # Generates a temporal plot analysis over the scenarios: 'monthly', 'yearly' or 'both'
-acumulate_comparison(generator_test.final_data, 'Mantaro_ Junin', 'monthly', '2005-01-01','2018-12-31')
+acumulate_comparison(generator_test.final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
 
 # Sorts the stations in function of altitude in a dictionary of stations, it replaces the original sort
 altitude_sort=sort_altitude(generator_test.final_data.keys(), generator_test.final_data)       
@@ -104,3 +104,44 @@ entonces si:
             prob-lluvia = 0 y todas las condiciones = 0 : OK, Green flag
 
 """
+
+# =============================================================================
+# sandbox
+# =============================================================================
+patthenr = generator_test.final_data
+from analysis_class import set_pandas_time
+set_pandas_time(patthenr)
+
+yearly = {}
+for key in patthenr:
+    data = patthenr[key].gwrGPM.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
+    obs[key] = data
+
+obs = {}
+
+for key in patthenr:
+    data = patthenr[key].data.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
+    obs[key] = data
+    
+def plot_all_dataframes(dictionary_of_dfs):
+    plt.figure(figsize=(12, 6))  # Set the figure size
+
+    for key, df in dictionary_of_dfs.items():
+        if 'precipitationCal' in df.columns and not df['precipitationCal'].isnull().all():
+            y = df['precipitationCal']
+        else:
+            y = df['Precipitation']
+
+        plt.plot(df.index, y, label=key)  # Plot with a label for the dictionary key
+
+    plt.title("Combined Plot of All DataFrames")
+    plt.xlabel("Date")
+    plt.ylabel("Value")
+    # plt.legend()  # Uncomment if you want legend
+    plt.grid(axis='both', linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
+plot_all_dataframes(yearly)
+plot_all_dataframes(obs)
