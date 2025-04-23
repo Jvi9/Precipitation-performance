@@ -606,6 +606,242 @@ class Generator():
             di = pd.concat([di, df], axis=1)
         
         return di
+
+
+class PrecipitationQualityChecker:
+    def __init__(self, df):
+        self.df = df.copy()
+        self.df.index = pd.to_datetime(self.df.index)
+        self.df["weekday"] = self.df.index.weekday
+        self.add_prob_lluvia()
+
+    def add_prob_lluvia(self):
+        def get_prob(month):
+            if month in [12, 1, 2, 3]:
+                return 1.0
+            elif month in [4, 5, 11]:
+                return 0.5
+            else:
+                return 0.0
+        self.df["prob_lluvia"] = self.df.index.month.map(get_prob)
+
+    def apply_condition_1(self):
+        cond1 = [0.0] * len(self.df)
+        for i in range(len(self.df) - 2):
+            if self.df["weekday"].iloc[i] == 4:  # viernes
+                v = self.df["Precipitation"].iloc[i]
+                s = self.df["Precipitation"].iloc[i + 1]
+                d = self.df["Precipitation"].iloc[i + 2]
+
+                if pd.notna(v) and v == s == d:
+                    cond1[i] = 1.0
+                elif pd.notna(s) and pd.notna(d) and s == 0 and d == 0:
+                    cond1[i] = 0.5
+                else:
+                    cond1[i] = 0.0
+        self.df["COND1"] = cond1
+
+    def apply_condition_2(self):
+        precip = self.df["Precipitation"].fillna(-9999)
+        cond2 = [0.0] * len(self.df)
+        for i in range(len(self.df)):
+            val = precip.iloc[i]
+            if val <= 0:
+                continue
+            if i >= 2 and val == precip.iloc[i - 1] == precip.iloc[i - 2] and val != 0:
+                cond2[i] = 1.0
+            elif i >= 1 and val == precip.iloc[i - 1] and val != 0:
+                cond2[i] = 0.5
+        self.df["COND2"] = cond2
+
+    def apply_condition_3(self, threshold=5.0):
+        def cond3_group(group):
+            max_val = group["Precipitation"].max()
+            if pd.isna(max_val) or max_val == 0:
+                return pd.Series([0.0] * len(group), index=group.index)
+            return group["Precipitation"].apply(
+                lambda x: 1.0 if pd.notna(x) and abs(x - max_val) <= threshold and x != 0 else 0.0
+            )
+        self.df["COND3"] = self.df.groupby(self.df.index.to_period("M")).apply(cond3_group).reset_index(level=0, drop=True)
+
+    def classify_flags(self):
+        def classify(row):
+            prob = row["prob_lluvia"]
+            conds = [row["COND1"], row["COND2"], row["COND3"]]
+
+            if prob == 1.0 and any(c == 1.0 for c in conds):
+                return "Red rain"
+            elif prob == 0.5 and any(c >= 0.5 for c in conds):
+                return "Yellow rain"
+            elif prob == 0.0 and all(c == 0.0 for c in conds):
+                return "Blue rain"
+            else:
+                return "Blue rain"
+        self.df["Flag"] = self.df.apply(classify, axis=1)
+
+    def run_all_checks(self):
+        self.apply_condition_1()
+        self.apply_condition_2()
+        self.apply_condition_3()
+        self.classify_flags()
+
+    def get_result(self):
+        return self.df[["Precipitation", "prob_lluvia", "COND1", "COND2", "COND3", "Flag"]]
+    
+    # Inside PrecipitationQualityChecker class
+    import matplotlib.pyplot as plt
+
+    def plot_flag_summary(self):
+        flag_counts = self.df["Flag"].value_counts().sort_index()
+        
+        # Print the counts
+        print("Flag Summary:")
+        print(flag_counts)
+        
+        # Plot
+        plt.figure(figsize=(8, 5))
+        flag_counts.plot(kind="bar", color=["red", "gold", "blue"])
+        plt.title("Flag Distribution Summary")
+        plt.xlabel("Flag Type")
+        plt.ylabel("Number of Days")
+        plt.grid(axis="y", linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+
+class PrecipitationBucket:
+    def __init__(self, load_data_path:str, min_range:str, max_range:str)->None:
+        self.load_data_path = load_data_path
+        self.min_range = min_range
+        self.max_range = max_range
+        
+        self._load_data()
+        
+    def _load_data(self):
+        # Load the dictionary from the specified path as final_data
+        with open(self.load_data_path, 'rb') as file:
+            final_data = pickle.load(file) 
+            self.final_data = final_data
+        print(f"Dictionary loaded successfully from {self.load_data_path}!")
+        
+    def checker(self):
+        self.results = {}
+        for key, data in self.final_data.items():
+            obs_data = data.data.copy()
+            obs_data.index = pd.to_datetime(obs_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            obs_data = obs_data.loc[self.min_range:self.max_range]
+            checker = PrecipitationQualityChecker(obs_data)
+            checker.run_all_checks()
+            self.results[key] = checker.get_result()
+    
+    def rain_quality(self):
+        summaries = []
+
+        for key, df in self.results.items():
+            flag_counts = df["Flag"].value_counts()
+            summary_item = {
+                "Key": key,
+                "Red rain": flag_counts.get("Red rain", 0),
+                "Yellow rain": flag_counts.get("Yellow rain", 0),
+                "Blue rain": flag_counts.get("Blue rain", 0),
+            }
+            summaries.append(summary_item)
+
+        data_summary = pd.DataFrame(summaries).set_index("Key")
+        self.summary = data_summary
+
+    def summary_graph(self):    
+        # Assuming: self.summary is your DataFrame (as shown)
+        df = self.summary.copy()
+        
+        # Plot settings
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Stacked bar plot
+        df[['Blue rain', 'Yellow rain', 'Red rain']].plot(kind='bar', stacked=True, ax=ax, 
+                                                          color=['blue', 'gold', 'red'])
+        
+        # Title and labels
+        ax.set_title('Rain Flag Summary by Station')
+        ax.set_ylabel('Days Count')
+        ax.set_xlabel('Station')
+        ax.legend(title='Rain Flag')
+        plt.xticks(rotation=90)
+        plt.tight_layout()
+        
+        plt.show()
+
+    def normal_graph(self):
+        # Copy and calculate row-wise percentages
+        df_percent = self.summary.copy()
+        df_percent = df_percent.div(df_percent.sum(axis=1), axis=0) * 100  # Convert to %
+        df_percent = df_percent.sort_values(by='Red rain', ascending=False) #sorted
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(12, 6))
+        df_percent[['Blue rain', 'Yellow rain', 'Red rain']].plot(
+            kind='bar', 
+            stacked=True, 
+            ax=ax, 
+            color=['blue', 'gold', 'red']
+        )
+        
+        # Title and labels
+        ax.set_title('Percentage of Rain Flags by Station')
+        ax.set_ylabel('Percentage (%)')
+        ax.set_xlabel('Station')
+        ax.legend(title='Rain Flag')
+        plt.xticks(rotation=90)
+        plt.tight_layout()
+        
+        plt.show()
+
+    
+def plot_flag_summary(dataflagged):
+    flag_counts = dataflagged["Flag"].value_counts().sort_index()
+    
+    # Print the counts
+    print("Flag Summary:")
+    print(flag_counts)
+    
+    # Plot
+    plt.figure(figsize=(8, 5))
+    flag_counts.plot(kind="bar", color=["blue", "gold", "red"])
+    plt.title("Flag Distribution Summary")
+    plt.xlabel("Flag Type")
+    plt.ylabel("Number of Days")
+    plt.grid(axis="y", linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+def plot_precipitation_colored(dataflagged):
+    # Ensure datetime index for plotting
+    df = dataflagged.copy()
+    df.index = pd.to_datetime(df.index)
+
+    # Assign colors based on the Flag column
+    color_map = {
+        "Blue rain": "blue",
+        "Yellow rain": "gold",
+        "Red rain": "red"
+    }
+    colors = df["Flag"].map(color_map)
+
+    # Plot
+    plt.figure(figsize=(12, 6))
+    plt.bar(df.index, df["Precipitation"].fillna(0), color=colors, width=1.0)
+    plt.title("Daily Precipitation Colored by Flag")
+    plt.xlabel("Date")
+    plt.ylabel("Precipitation (mm)")
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    legend_handles = [
+        plt.Line2D([0], [0], color="blue", lw=4, label="Blue rain"),
+        plt.Line2D([0], [0], color="gold", lw=4, label="Yellow rain"),
+        plt.Line2D([0], [0], color="red", lw=4, label="Red rain")
+    ]
+    plt.legend(handles=legend_handles)
+    plt.show()
+
 # # # =============================================================================
 # # # Play ground
 # # # =============================================================================

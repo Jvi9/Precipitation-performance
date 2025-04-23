@@ -302,10 +302,11 @@ class Station():
         sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
     
-        hits = ((obs_data > 0) &  (sim_data >= min_obs_threshold)).sum()    # Satellite rain and gauge rain
-        false_alarms = ((obs_data == 0) &  (sim_data >= min_obs_threshold)).sum()
-        misses = ((obs_data > 0) &  (sim_data == 0)).sum()
-        correct_negatives = ((obs_data == 0) &  (sim_data == 0)).sum()
+        hits = ((obs_data > 0) & (sim_data >= min_obs_threshold)).sum()    # Satellite rain and gauge rain
+        false_alarms = ((obs_data == 0) & (sim_data >= min_obs_threshold)).sum()
+        # misses = ((obs_data > 0) &  (sim_data == 0)).sum()
+        misses = ((obs_data > 0) & (sim_data <= min_obs_threshold)).sum()
+        correct_negatives = ((obs_data == 0) & (sim_data == 0)).sum()
         
         FBI = (hits + false_alarms) / (hits + misses)
         FAR = (false_alarms) / (hits + false_alarms)
