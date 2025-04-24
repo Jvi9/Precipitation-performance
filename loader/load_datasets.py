@@ -131,12 +131,12 @@ def get_expGPM(dataset_path, stations_dictionary):
 # get_gwrGPM(r"D:\Thesis_IUPWARE\Final_pp_daily", final_data)    
 # get_rain4pe(r'C:\Users\jvila\Downloads\RAIN4PE_daily_0.1d_1981_2015_v1.0.nc', final_data)
 #for jose to execute
-<<<<<<< HEAD
+# <<<<<<< HEAD
 get_expGPM(r"D:\XXXXXX\Final_pp_daily in a folder", final_data)    
-=======
+# =======
 expoGPM_path = r"D:\GPM_downscaled_peru\gpm_dwsc_daily"
 get_expGPM(expoGPM_path, final_data)    
->>>>>>> 4b93a952529f60f46694d9a28d4b2b27e7acb8dd
+# >>>>>>> 4b93a952529f60f46694d9a28d4b2b27e7acb8dd
 
 #Save the data selected for the study to not re-process it everytime
 final_data_loaded_file = "final_data_loaded.pkl"
