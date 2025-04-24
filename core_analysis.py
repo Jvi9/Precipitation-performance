@@ -15,7 +15,134 @@ for key in final_data.keys():
     print(f'{threshold_i} and {threshold_f}')
 max(list_mins)
 """
+# =============================================================================
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import geopandas as gpd
+from shapely.geometry import Point
+import contextily as cx
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.cm as cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+# functions to plot maps
+def get_pod_far_min_max(df):
+    pod_cols = [col for col in df.columns if col.startswith('pod')]
+    far_cols = [col for col in df.columns if col.startswith('far')]
 
+    pod_min = round(df[pod_cols].min().min(), 2)
+    pod_max = round(df[pod_cols].max().max(), 2)
+    
+    far_min = round(df[far_cols].min().min(), 2)
+    far_max = round(df[far_cols].max().max(), 2)
+    
+    return pod_min, pod_max, far_min, far_max
+
+def geo_plot(datasummary:pd.DataFrame,
+             geosummary:pd.DataFrame,
+             colormetric:str,
+             sizemetric:str,
+             colormin:float,
+             colormax:float,
+             sizemin:float,
+             sizemax:float,
+             boundary_path,
+             title:str):
+    
+    boundary = gpd.read_file(boundary_path)
+    boundary = boundary.to_crs(epsg=3857)
+    # Merge your coordinates with your data
+    merged_df = pd.merge(
+        geosummary,
+        datasummary,
+        left_on='station',
+        right_index=True,
+        how='inner'
+    )
+
+    # Create a GeoDataFrame for mapping
+    geometry = [Point(lon, lat) for lon, lat in zip(merged_df['lon'], merged_df['lat'])]
+    gdf = gpd.GeoDataFrame(merged_df, geometry=geometry, crs="EPSG:4326")
+
+    # Choose which metrics to use
+    far_metric = colormetric  # For color
+    pod_metric = sizemetric  # For size
+
+    # Create the figure and axis
+    fig, ax = plt.subplots(figsize=(12, 12), dpi=300)
+
+    # Create a muted colormap
+    colors = ['#f6eff7', '#bdc9e1', '#74a9cf', '#2b8cbe', '#045a8d']  # Muted blue palette
+    n_colors = 256
+    cmap = LinearSegmentedColormap.from_list('muted_blues', colors, N=n_colors)
+
+    # Get the min and max values for scaling
+    far_min = colormin
+    far_max = colormax
+    pod_min = sizemin
+    pod_max = sizemax
+
+    # Scale the size values
+    size_min = 100
+    size_max = 500
+
+    # Convert to Web Mercator projection for basemap compatibility
+    gdf_webmerc = gdf.to_crs(epsg=3857)
+
+    # Plot the GeoDataFrame with our visualization parameters
+    gdf_webmerc.plot(
+        ax=ax,
+        markersize=gdf_webmerc[pod_metric].apply(lambda x: size_min + (size_max - size_min) * (x - pod_min) / (pod_max - pod_min)),
+        column=far_metric,
+        cmap=cmap,
+        alpha=0.8,
+        edgecolor='blue',
+        linewidth=0.8,
+        vmin=far_min,
+        vmax=far_max,
+        legend=False,
+        zorder=5
+    )
+
+    # Add basemap
+    cx.add_basemap(ax, source=cx.providers.OpenTopoMap, zoom=8)
+    boundary.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=3.0, zorder=4)
+
+    # Add color bar
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="3%", pad=0.1)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=far_min, vmax=far_max))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cax)
+    cbar.set_label(f'({far_metric})', fontsize=12)
+
+    # Create size legend values (min, middle, max)
+    size_legend_values = [round(pod_min, 2), round((pod_min + pod_max) / 2, 2), round(pod_max, 2)]
+    size_legend_sizes = [size_min + (size_max - size_min) * (val - pod_min) / (pod_max - pod_min) 
+                        for val in size_legend_values]
+
+    # Add a legend for sizes
+    for i, (val, size) in enumerate(zip(size_legend_values, size_legend_sizes)):
+        ax.scatter([], [], c='gray', s=size, edgecolors='black', linewidths=0.5,
+                  label=f'POD: {val:.2f}')
+
+    ax.legend(title=f'({pod_metric})', loc='lower left', frameon=True, framealpha=0.85,labelspacing=1.2)
+
+    # Remove axis ticks and labels (typical for maps)
+    ax.set_axis_off()
+
+    # Add title
+    fig.suptitle(f'{title}', fontsize=14)
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # # Save figure in high-quality formats
+    # plt.savefig('precipitation_metrics_georeferenced_map.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('precipitation_metrics_georeferenced_map.pdf', bbox_inches='tight')  # Vector format for publication
+
+    plt.show()
+# =============================================================================
 from analysis_class import *
 import matplotlib.pyplot as plt
 
@@ -145,3 +272,27 @@ def plot_all_dataframes(dictionary_of_dfs):
 
 plot_all_dataframes(yearly)
 plot_all_dataframes(obs)
+
+
+# =============================================================================
+# GEO GRAPH
+# =============================================================================
+# creates geographs
+# =============================================================================
+boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
+df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod'])
+pod_min, pod_max, far_min, far_max = get_pod_far_min_max(df)
+geo_sum = generator_test.geo_summary()
+
+datasummary=df
+geosummary=geo_sum
+colormetric='far_rain4pe'
+sizemetric='pod_rain4pe'
+colormin=far_min
+colormax=far_max
+sizemin=pod_min
+sizemax=pod_max
+boundary_path=boundary_path
+title='Scenario Rain4pe data'
+geo_plot(datasummary,geosummary,colormetric,sizemetric,colormin,colormax,
+             sizemin,sizemax,boundary_path,title)

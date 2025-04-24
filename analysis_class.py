@@ -14,7 +14,7 @@ import numpy as np
 # =============================================================================
 """Posible solution for the storage of all the statistics
     Obiously all the data are being compared to the observations""" 
-        
+      
 class productStats():
     def __init__(self, station_name, mae, pbias, rmse,r, kge, fbi, far, pod, acc, lat, lon, alt):
         self.name = station_name
@@ -463,6 +463,7 @@ class Generator():
         self.max_range = max_range
         
         self._load_data()
+        self._set_pandas_time()
         self._run_scenarios()
     def _load_data(self):
         # Load the dictionary from the specified path as final_data
@@ -471,14 +472,25 @@ class Generator():
             self.final_data = final_data
         print(f"Dictionary loaded successfully from {self.load_data_path}!")
     
+    def _set_pandas_time(self):
+        for key, station in self.final_data.items():  # Loop through each Station instance
+            # Convert all relevant DataFrame indexes to pandas datetime
+            station.rawGPM.index = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.gwrGPM.index = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.data.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.expGPM.index = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        print("All datetime indexes migrated to pandas datetime format for all stations.")
+     
     def _run_scenarios(self):
         self.statsrawGPM_dict = raise_stats(productStats, self.final_data, 'data', 'rawGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
         self.statsgwrGPM_dict = raise_stats(productStats, self.final_data, 'data', 'gwrGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
         self.statsPISCO_dict = raise_stats(productStats, self.final_data, 'data', 'PISCO', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
         self.statsrain4pe_dict = raise_stats(productStats, self.final_data, 'data', 'rain4pe', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
         self.statsexpGPM_dict = raise_stats(productStats, self.final_data, 'data', 'expGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
-        self.set_pandas_time()
-
+        
+     
     def plot_probability_graph(self, pod_columnx='pod', far_columny='far'):
         """
         Plots multiple datasets on the same graph, differentiating them by color and legend.
@@ -557,6 +569,23 @@ class Generator():
         data_joined.reset_index(level=0, inplace=True)
     
         return data_joined
+    
+    def geo_summary(self):
+        rows = []
+        # Loop through the data
+        for key, other in self.final_data.items():
+            name = key
+            lat = self.final_data[key].lat
+            lon = self.final_data[key].lon
+            
+            # Append a dictionary for each row
+            rows.append({'station': name, 'lat': lat, 'lon': lon})
+
+        # Create a DataFrame from the list of dictionaries
+        geo_sum = pd.DataFrame(rows)
+        
+        self.geo_summary = geo_sum
+        return self.geo_summary
     
     def join_stats(self, list_of_dictionaries: list = None, metrics: list = None) -> pd.DataFrame:
         """

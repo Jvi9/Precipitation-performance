@@ -41,7 +41,8 @@ precipitation-performance/
 
 <h2>Preview view: multipoint maps</h2>
 
-<img src="https://github.com/user-attachments/assets/9ba6cc9b-9694-41a0-b658-8d2b7b0be9de" width="350">
-<img src="https://github.com/user-attachments/assets/c5a3d9ff-84e1-48ce-b59c-cc7d3c89b91d" width="350">
-<img src="https://github.com/user-attachments/assets/9a99e5d7-ff4f-4d42-8e97-7b3dfaa994e4" width="350">
-<img src="https://github.com/user-attachments/assets/7a01044e-722e-4478-a3d2-7b6e22ff0e10" width="350">
+<img src="https://github.com/user-attachments/assets/31a5cbfa-4f59-4075-9e7e-3d3d58740769" width="350">
+<img src="https://github.com/user-attachments/assets/60ec4354-67fb-4f16-b44a-b4070fadb0e5" width="350">
+<img src="https://github.com/user-attachments/assets/9a59b283-8858-48ca-96a3-318972b78d00" width="350">
+<img src="https://github.com/user-attachments/assets/8c099784-b766-4bb9-a95b-592547fc353b" width="350">
+<img src="https://github.com/user-attachments/assets/5121b07e-b75b-463c-b916-378f03d298f4" width="350">
