@@ -142,6 +142,54 @@ def geo_plot(datasummary:pd.DataFrame,
     # plt.savefig('precipitation_metrics_georeferenced_map.pdf', bbox_inches='tight')  # Vector format for publication
 
     plt.show()
+
+def plot_extreme_indices_per_station(generator, station_name):
+    sources = {
+        "Observed": generator.extremeIndicesObserved,
+        "rawGPM": generator.extremeIndicesrawGPM,
+        "expGPM": generator.extremeIndicesexpGPM,
+        "gwrGPM": generator.extremeIndicesgwrGPM,
+        "PISCO": generator.extremeIndicesPISCO,
+        "rain4pe": generator.extremeIndicesrain4pe
+    }
+
+    index_names = ["cdd", "cwd", "r10", "r20", "r95p", "r99p"]
+    index_data = {idx: {} for idx in index_names}
+
+    for source_name, source_dict in sources.items():
+        ei = source_dict.get(station_name)
+        if ei is None:
+            print(f"[Warning] {station_name} not found in {source_name}")
+            continue
+        for idx in index_names:
+            index_series = getattr(ei, idx)
+            index_data[idx][source_name] = index_series.sort_index()
+
+    for idx in index_names:
+        series_dict = index_data[idx]
+        if not series_dict:
+            continue
+
+        # Union of all years from all series
+        all_years = sorted(set().union(*[s.index for s in series_dict.values()]))
+        x = np.arange(len(all_years)) 
+
+        width = 0.12  
+        n_sources = len(series_dict)
+        offset = -((n_sources - 1) / 2) * width  
+
+        plt.figure(figsize=(12, 5))
+        for i, (source, series) in enumerate(series_dict.items()):
+            y_vals = [series.get(year, np.nan) for year in all_years]
+            plt.bar(x + i * width + offset, y_vals, width=width, label=source)
+
+        plt.title(f"{idx.upper()} for {station_name}")
+        plt.xlabel("Year")
+        plt.ylabel(idx.upper())
+        plt.xticks(x, all_years, rotation=45)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 # =============================================================================
 from analysis_class import *
 import matplotlib.pyplot as plt
@@ -153,7 +201,9 @@ import matplotlib.pyplot as plt
 # .statsrain4pe_dict
 # .statsexpGPM_dict
 
-load_data_path=r'C:\Users\jvila\Desktop\Andean_project\datasets/data_locked_loaded.pkl'
+cwd = os.getcwd()
+
+load_data_path=f'{cwd}/datasets/data_locked_loaded.pkl'
 min_range = '2005-01-01'
 max_range = '2018-12-31'
 min_threshold = 1.0
@@ -166,11 +216,11 @@ generator_test.plot_probability_graph(pod_columnx='pod', far_columny='far')
 # Generates a summary for station, you can specify or exclude a list of scenarios, by default:
 # list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']  
 # .metrics_over_analysis(station_name , list_of_scenarios) 
-station_test = generator_test.metrics_over_analysis('Crisnejas_ Sondor-Matara')
-plot_1station_stats(station_test)
+# station_test = generator_test.metrics_over_analysis('Crisnejas_ Sondor-Matara')
+# plot_1station_stats(station_test)
 
 # Generates a temporal plot analysis over the scenarios: 'monthly', 'yearly' or 'both'
-acumulate_comparison(generator_test.final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
+# acumulate_comparison(generator_test.final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
 
 # Sorts the stations in function of altitude in a dictionary of stations, it replaces the original sort
 altitude_sort=sort_altitude(generator_test.final_data.keys(), generator_test.final_data)       
@@ -181,12 +231,21 @@ df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['fbi', 'f
 heat_map(df)
 
 
+
+# Plotting Extreme Indices for a random station
+station = 'Perene_ Runatullo'
+plot_extreme_indices_per_station(generator_test, station)
+
+
+#%%
+
+
 """Quality check of the precipitation, it looks like aint a big problem"""
-bucket_test = PrecipitationBucket(load_data_path,min_range,max_range)
-bucket_test.checker()
-bucket_test.rain_quality()
-bucket_test.summary_graph()
-bucket_test.normal_graph()
+# bucket_test = PrecipitationBucket(load_data_path,min_range,max_range)
+# bucket_test.checker()
+# bucket_test.rain_quality()
+# bucket_test.summary_graph()
+# bucket_test.normal_graph()
 
 """
 Podriamos utilizar:
@@ -235,43 +294,43 @@ entonces si:
 # =============================================================================
 # sandbox
 # =============================================================================
-patthenr = generator_test.final_data
-from analysis_class import set_pandas_time
-set_pandas_time(patthenr)
+# patthenr = generator_test.final_data
+# from analysis_class import set_pandas_time
+# set_pandas_time(patthenr)
 
-yearly = {}
-for key in patthenr:
-    data = patthenr[key].gwrGPM.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
-    obs[key] = data
+# yearly = {}
+# for key in patthenr:
+#     data = patthenr[key].gwrGPM.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
+#     obs[key] = data
 
-obs = {}
+# obs = {}
 
-for key in patthenr:
-    data = patthenr[key].data.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
-    obs[key] = data
+# for key in patthenr:
+#     data = patthenr[key].data.loc['2005-01-01':'2018-12-31'].resample("YE").sum()
+#     obs[key] = data
     
-def plot_all_dataframes(dictionary_of_dfs):
-    plt.figure(figsize=(12, 6))  # Set the figure size
+# def plot_all_dataframes(dictionary_of_dfs):
+#     plt.figure(figsize=(12, 6))  # Set the figure size
 
-    for key, df in dictionary_of_dfs.items():
-        if 'precipitationCal' in df.columns and not df['precipitationCal'].isnull().all():
-            y = df['precipitationCal']
-        else:
-            y = df['Precipitation']
+#     for key, df in dictionary_of_dfs.items():
+#         if 'precipitationCal' in df.columns and not df['precipitationCal'].isnull().all():
+#             y = df['precipitationCal']
+#         else:
+#             y = df['Precipitation']
 
-        plt.plot(df.index, y, label=key)  # Plot with a label for the dictionary key
+#         plt.plot(df.index, y, label=key)  # Plot with a label for the dictionary key
 
-    plt.title("Combined Plot of All DataFrames")
-    plt.xlabel("Date")
-    plt.ylabel("Value")
-    # plt.legend()  # Uncomment if you want legend
-    plt.grid(axis='both', linestyle="--", alpha=0.5)
-    plt.tight_layout()
-    plt.show()
+#     plt.title("Combined Plot of All DataFrames")
+#     plt.xlabel("Date")
+#     plt.ylabel("Value")
+#     # plt.legend()  # Uncomment if you want legend
+#     plt.grid(axis='both', linestyle="--", alpha=0.5)
+#     plt.tight_layout()
+#     plt.show()
 
 
-plot_all_dataframes(yearly)
-plot_all_dataframes(obs)
+# plot_all_dataframes(yearly)
+# plot_all_dataframes(obs)
 
 
 # =============================================================================
@@ -279,20 +338,20 @@ plot_all_dataframes(obs)
 # =============================================================================
 # creates geographs
 # =============================================================================
-boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
-df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod'])
-pod_min, pod_max, far_min, far_max = get_pod_far_min_max(df)
-geo_sum = generator_test.geo_summary()
+# boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
+# df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod'])
+# pod_min, pod_max, far_min, far_max = get_pod_far_min_max(df)
+# geo_sum = generator_test.geo_summary()
 
-datasummary=df
-geosummary=geo_sum
-colormetric='far_rain4pe'
-sizemetric='pod_rain4pe'
-colormin=far_min
-colormax=far_max
-sizemin=pod_min
-sizemax=pod_max
-boundary_path=boundary_path
-title='Scenario Rain4pe data'
-geo_plot(datasummary,geosummary,colormetric,sizemetric,colormin,colormax,
-             sizemin,sizemax,boundary_path,title)
+# datasummary=df
+# geosummary=geo_sum
+# colormetric='far_rain4pe'
+# sizemetric='pod_rain4pe'
+# colormin=far_min
+# colormax=far_max
+# sizemin=pod_min
+# sizemax=pod_max
+# boundary_path=boundary_path
+# title='Scenario Rain4pe data'
+# geo_plot(datasummary,geosummary,colormetric,sizemetric,colormin,colormax,
+#              sizemin,sizemax,boundary_path,title)

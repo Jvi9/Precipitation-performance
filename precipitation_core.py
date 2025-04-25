@@ -315,6 +315,79 @@ class Station():
         print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
         return FBI, FAR, POD, accuracy
 
+    def _extreme_indices(self, self_attr:str, start_date: str, end_date: str):
+        """
+        Calculates extreme indicators between simulated and observed data.
+        The indicators are based on Expert Team on Climate Change Detection and Indices (ETCCDI)  http://etccdi.pacificclimate.org.
+        
+        ** This is a bit different because we are not calculating error or performance metrics
+        ** We do not load observed and simulated everytime, they are independent
+        ** Functions and classess later are created later to account for this
+        
+        Args:
+            self_attr (str)   : Attribute name for source of data (e.g., "data","rawGPM")
+            start_date (str) : Start date of the period.
+            end_date (str)   : End date of the period.
+            
+        Calculated parameters:
+        
+            *Counter Indices*
+            Consecutive dry days (CDD) : Number of consecutive days with precipitation < 1mm.
+            Consecutive wet days (CWD) : Number of consecutive days with precipitation > 1mm.
+            Number of heavy precipitation days (R10)      : Number of days with precipitation > 10mm.
+            Number of very heavy precipitation days (R20) : Number of days with precipitation > 20mm.
+            
+            *Percentile Indices*
+            Very wet days (R95p)      : Annual total precipitation when daily precipitation > 95th percentile.    
+            Extremely wet days (R99p) : Annual total precipitation when daily precipitation > 99th percentile.
+            
+            
+        returns:
+            Dictionary with the calculated indices per year
+            
+        """
+        
+        # Reading data for given source
+
+        data = getattr(self, self_attr)  # or sim_attr, since you’re now using just one
+        data = data.copy()
+        data.index = pd.to_datetime(data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        if self_attr == "data":
+            data = data.loc[start_date:end_date, 'Precipitation']
+        else:
+            data = data.loc[start_date:end_date, 'precipitationCal']
+        
+        ext_ind_dict = {}
+
+        # ------ Calculating Counter Indices
+        years = data.index.year.unique()
+        ext_ind_dict['cwd'] = pd.Series({
+            year: (group := data[data.index.year == year])  
+                .pipe(lambda x: (x > 1).astype(int)) #Count wet days
+                .groupby((group <= 1).cumsum())      #Stop count when dry day is found
+                .sum()                               #Sum counts
+                .max(skipna=True)                    #Get max count of wet days  for the year -->cwd
+            for year in years
+        })
+        
+        ext_ind_dict['cdd'] = pd.Series({
+            year: (group := data[data.index.year == year])  
+                .pipe(lambda x: (x < 1).astype(int)) #Count dry days
+                .groupby((group >= 1).cumsum())      #Stop count when wet day is found
+                .sum()                               #Sum counts
+                .max(skipna=True)                    #Get max count of dry days for the year -->cdd   
+            for year in years
+        })
+        
+        ext_ind_dict['r10'] = data.groupby(data.index.year).apply(lambda x: (x > 10).sum())
+        ext_ind_dict['r20'] = data.groupby(data.index.year).apply(lambda x: (x > 20).sum())
+
+        # ------ Calculating Percentile Indices
+        ext_ind_dict['r95p'] = data.groupby(data.index.year).apply(lambda x: x[x > data.quantile(0.95)].sum())
+        ext_ind_dict['r99p'] = data.groupby(data.index.year).apply(lambda x: x[x > data.quantile(0.99)].sum())
+        
+        return ext_ind_dict
+# =============================================================================
         
 """ 
 Functions to retrive some imformation from dataframes, which are contained

@@ -30,6 +30,22 @@ class productStats():
         self.lat = lat
         self.lon = lon
         self.alt = alt
+
+class extremeIndices():
+    def __init__(self, station_name, cdd, cwd, r10, r20, r95p, r99p):
+        '''
+        Type of indices is Pandas Series
+        '''
+        self.name = station_name
+        self.cdd = cdd
+        self.cwd = cwd
+        self.r10 = r10
+        self.r20 = r20
+        self.r95p = r95p
+        self.r99p = r99p
+
+
+
         
 def set_pandas_time(dictionary_of_stations):
     for key, station in dictionary_of_stations.items():  # Loop through each Station instance
@@ -65,6 +81,23 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
         dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, fbi, far, pod, acc, lat, lon, alt)
         
     return dummy_dictionary
+
+def raise_extremeIndices(object_creating, dictionary:dict, self_attr:str, start_date: str, end_date: str):
+    """
+    Similar to raise_stats, but for extreme indices
+    Not using raise_stats because here we run analysis independently (obs and sim are not loaded everytime)
+    
+    Returns:
+        Dictionary with extremeIndices instance that corresponds to each station
+    """
+    station_dictionary = {}
+    
+    for key in dictionary.keys():
+        ExtInd = dictionary[key]._extreme_indices(self_attr, start_date, end_date) #This is also a dictionary
+        station_dictionary[key] = object_creating(key,ExtInd["cdd"],ExtInd["cwd"],ExtInd["r10"],ExtInd["r20"],ExtInd["r95p"],ExtInd["r99p"])
+        
+    return station_dictionary
+
 
 def parameters_report(dictionary: dict):
     """
@@ -465,6 +498,8 @@ class Generator():
         self._load_data()
         self._set_pandas_time()
         self._run_scenarios()
+        self._run_extremeIndices()
+        
     def _load_data(self):
         # Load the dictionary from the specified path as final_data
         with open(self.load_data_path, 'rb') as file:
@@ -484,11 +519,19 @@ class Generator():
         print("All datetime indexes migrated to pandas datetime format for all stations.")
      
     def _run_scenarios(self):
-        self.statsrawGPM_dict = raise_stats(productStats, self.final_data, 'data', 'rawGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
-        self.statsgwrGPM_dict = raise_stats(productStats, self.final_data, 'data', 'gwrGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
-        self.statsPISCO_dict = raise_stats(productStats, self.final_data, 'data', 'PISCO', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsrawGPM_dict  = raise_stats(productStats, self.final_data, 'data', 'rawGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsgwrGPM_dict  = raise_stats(productStats, self.final_data, 'data', 'gwrGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsPISCO_dict   = raise_stats(productStats, self.final_data, 'data', 'PISCO', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
         self.statsrain4pe_dict = raise_stats(productStats, self.final_data, 'data', 'rain4pe', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
-        self.statsexpGPM_dict = raise_stats(productStats, self.final_data, 'data', 'expGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        self.statsexpGPM_dict  = raise_stats(productStats, self.final_data, 'data', 'expGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
+        
+    def _run_extremeIndices(self):
+        self.extremeIndicesrawGPM     = raise_extremeIndices(extremeIndices, self.final_data,'rawGPM' , self.min_range, self.max_range)
+        self.extremeIndicesgwrGPM     = raise_extremeIndices(extremeIndices, self.final_data,'gwrGPM' , self.min_range, self.max_range)
+        self.extremeIndicesPISCO      = raise_extremeIndices(extremeIndices, self.final_data,'PISCO'  , self.min_range, self.max_range)
+        self.extremeIndicesrain4pe    = raise_extremeIndices(extremeIndices, self.final_data,'rain4pe', self.min_range, self.max_range)
+        self.extremeIndicesexpGPM     = raise_extremeIndices(extremeIndices, self.final_data,'expGPM' , self.min_range, self.max_range)
+        self.extremeIndicesObserved   = raise_extremeIndices(extremeIndices, self.final_data,'data'   , self.min_range, self.max_range)
         
      
     def plot_probability_graph(self, pod_columnx='pod', far_columny='far'):
