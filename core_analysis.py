@@ -72,10 +72,11 @@ def geo_plot(datasummary:pd.DataFrame,
     fig, ax = plt.subplots(figsize=(12, 12), dpi=300)
 
     # Create a muted colormap
-    colors = ['#f6eff7', '#bdc9e1', '#74a9cf', '#2b8cbe', '#045a8d']  # Muted blue palette
-    n_colors = 256
-    cmap = LinearSegmentedColormap.from_list('muted_blues', colors, N=n_colors)
-
+    # colors = ['#f6eff7', '#bdc9e1', '#74a9cf', '#2b8cbe', '#045a8d']  # Muted blue palette
+    # n_colors = 256
+    # cmap = LinearSegmentedColormap.from_list('muted_blues', colors, N=n_colors)
+    from matplotlib import cm
+    cmap = cm.get_cmap('coolwarm', 256)
     # Get the min and max values for scaling
     far_min = colormin
     far_max = colormax
@@ -105,7 +106,8 @@ def geo_plot(datasummary:pd.DataFrame,
     )
 
     # Add basemap
-    cx.add_basemap(ax, source=cx.providers.OpenTopoMap, zoom=8)
+    # cx.add_basemap(ax, source=cx.providers.OpenTopoMap, zoom=8)
+    cx.add_basemap(ax, source=cx.providers.NASAGIBS.ASTER_GDEM_Greyscale_Shaded_Relief, zoom=8)
     boundary.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=3.0, zorder=4)
 
     # Add color bar
@@ -209,9 +211,16 @@ max_range = '2018-12-31'
 min_threshold = 1.0
 
 generator_test = Generator(load_data_path,min_range,max_range, min_threshold)
+generator_test.plot_violin_stats(stat_name='alt')
+generator_test.plot_violin_precipitation()
+
 
 # Columns can be changed to any stat: ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
-generator_test.plot_probability_graph(pod_columnx='pod', far_columny='far')
+generator_test.plot_probability_graph(pod_columnx='far', far_columny='pod')
+generator_test.plot_probability_graph(pod_columnx='alt', far_columny='pod')
+generator_test.plot_probability_graph(pod_columnx='min_sim', far_columny='rmse')
+minimos=generator_test.statsrain4pe_dict
+minimosgwr=generator_test.statsgwrGPM_dict
 
 # Generates a summary for station, you can specify or exclude a list of scenarios, by default:
 # list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']  
@@ -338,20 +347,129 @@ entonces si:
 # =============================================================================
 # creates geographs
 # =============================================================================
-# boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
-# df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod'])
-# pod_min, pod_max, far_min, far_max = get_pod_far_min_max(df)
-# geo_sum = generator_test.geo_summary()
+boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
+df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod','acc'])
+pod_min, pod_max, far_min, far_max = get_pod_far_min_max(df)
+geo_sum = generator_test.geo_summary()
 
-# datasummary=df
-# geosummary=geo_sum
-# colormetric='far_rain4pe'
-# sizemetric='pod_rain4pe'
-# colormin=far_min
-# colormax=far_max
-# sizemin=pod_min
-# sizemax=pod_max
-# boundary_path=boundary_path
-# title='Scenario Rain4pe data'
-# geo_plot(datasummary,geosummary,colormetric,sizemetric,colormin,colormax,
-#              sizemin,sizemax,boundary_path,title)
+datasummary=df
+geosummary=geo_sum
+colormetric='far_rain4pe'
+sizemetric='pod_rain4pe'
+colormin=far_min
+colormax=far_max
+sizemin=pod_min
+sizemax=pod_max
+boundary_path=boundary_path
+title='Scenario Rain4pe data'
+geo_plot(datasummary,geosummary,colormetric,sizemetric,colormin,colormax,
+              sizemin,sizemax,boundary_path,title)
+
+# =============================================================================
+# 
+# =============================================================================
+
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import contextily as cx
+
+# === Load your data ===
+# Main data
+df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod','acc','pbias'])
+
+# Geolocation data
+geo_df = generator_test.geo_summary()
+geo_df = geo_sum
+
+# Merge dataframes
+merged = df.reset_index().merge(geo_df, left_on='index', right_on='station')
+
+# Convert to GeoDataFrame
+gdf = gpd.GeoDataFrame(merged, geometry=gpd.points_from_xy(merged.lon, merged.lat), crs="EPSG:4326")
+gdf = gdf.to_crs(epsg=3857)  # for basemap compatibility
+
+# Load study area shapefile and reproject
+boundary_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_area_shp\study_area.shp'
+boundary = gpd.read_file(boundary_path).to_crs(epsg=3857)
+
+# === Variable groups for each row ===
+from matplotlib.colors import LinearSegmentedColormap
+
+# === Variable groups for each row ===
+variables = [
+    ['far_rawGPM', 'far_gwrGPM', 'far_PISCO', 'far_rain4pe', 'far_expGPM'],
+    ['pod_rawGPM', 'pod_gwrGPM', 'pod_PISCO', 'pod_rain4pe', 'pod_expGPM'],
+    ['acc_rawGPM', 'acc_gwrGPM', 'acc_PISCO', 'acc_rain4pe', 'acc_expGPM'],
+    ['pbias_rawGPM', 'pbias_gwrGPM', 'pbias_PISCO', 'pbias_rain4pe', 'pbias_expGPM']
+
+]
+
+# === Compute row-wise min and max ===
+vmins = []
+vmaxs = []
+for row_vars in variables:
+    all_values = gdf[row_vars].values.flatten()
+    vmins.append(all_values.min())
+    vmaxs.append(all_values.max())
+
+# === Plot setup ===
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(14, 12))
+fig.suptitle('Metric Maps', fontsize=16)
+
+# Flatten axes for easier iteration
+axes = axes.flatten()
+
+# === Custom colormap ===
+cmap = LinearSegmentedColormap.from_list("blue_red", ["red", "blue"])
+
+# === Plot loop ===
+for row_idx, row_vars in enumerate(variables):
+    for col_idx, metric in enumerate(row_vars):
+        i = row_idx * 5 + col_idx
+        ax = axes[i]
+        
+        # Plot boundary
+        boundary.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=1)
+
+        # Plot points with unified color scale for the row
+        gdf.plot(
+            ax=ax,
+            column=metric,
+            cmap=cmap,
+            markersize=10,
+            legend=True,
+            # vmin=vmins[row_idx],
+            # vmax=vmaxs[row_idx]
+        )
+
+        # Add basemap (optional)
+        # cx.add_basemap(ax, source=cx.providers.OpenTopoMap, zoom=8)
+        
+        ax.set_title(metric)
+        ax.set_axis_off()
+
+plt.tight_layout(rect=[0, 0, 1, 0.96], pad=0.3, w_pad=0.05, h_pad=0.05)
+plt.show()
+
+for key, obj in generator_test.statsexpGPM_dict.items():
+    try:
+        obj.alt = pd.to_numeric(obj.alt, errors='coerce')
+        print(f"{obj.alt}")
+    except Exception as e:
+        print(f"{key}: Failed to convert alt ({e})")
+    
+    
+for key, obj in generator_test.statsexpGPM_dict.items():
+    print(f"\n{key}:")
+    for attr in dir(obj):
+        if not attr.startswith('_'):
+            try:
+                val = getattr(obj, attr)
+                print(f"  {attr}: {type(val)}")
+            except Exception as e:
+                print(f"  {attr}: Error accessing ({e})")
+
+for key, obj in generator_test.statsexpGPM_dict.items():
+    if obj.alt is not None and obj.alt < 0:
+        print(f"{key}: {obj.alt}")
