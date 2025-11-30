@@ -54,12 +54,12 @@ class extremeIndices():
 def set_pandas_time(dictionary_of_stations):
     for key, station in dictionary_of_stations.items():  # Loop through each Station instance
         # Convert all relevant DataFrame indexes to pandas datetime
-        station.rawGPM.index = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.gwrGPM.index = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.data.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        station.expGPM.index = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.rawGPM.index    = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.gwrGPM.index    = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.PISCO.index     = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.rain4pe.index   = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.data.index      = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        station.expGPM.index    = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
     print("All datetime indexes migrated to pandas datetime format for all stations.")
         
 def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
@@ -85,6 +85,7 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
         dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, zero_sim, min_sim, max_sim, fbi, far, pod, acc, lat, lon, alt)
         
     return dummy_dictionary
+
 
 def raise_extremeIndices(object_creating, dictionary:dict, self_attr:str, start_date: str, end_date: str):
     """
@@ -492,35 +493,60 @@ def create_iso_plot(df, plot_type:str,station_name:str):
 
     plt.show()  
 
+#==============================================================================================================================================
+
 class Generator():
     def __init__(self, load_data_path:str, min_range:str, max_range:str, min_threshold:float)->None:
+        
         self.load_data_path = load_data_path
-        self.min_threshold = min_threshold
-        self.min_range = min_range
-        self.max_range = max_range
+        self.min_threshold  = min_threshold
+        self.min_range      = min_range
+        self.max_range      = max_range
         
         self._load_data()
         self._set_pandas_time()
+        self._remove_negatives()
         self._run_scenarios()
         self._run_extremeIndices()
-        print("Generator generated successfully!")
+
+        print("Generator created successfully!")
+
     def _load_data(self):
+        
         # Load the dictionary from the specified path as final_data
+        
         with open(self.load_data_path, 'rb') as file:
             final_data = pickle.load(file) 
             self.final_data = final_data
+        
         print(f"Dictionary loaded successfully from {self.load_data_path}!")
     
     def _set_pandas_time(self):
+        
         for key, station in self.final_data.items():  # Loop through each Station instance
+        
             # Convert all relevant DataFrame indexes to pandas datetime
-            station.rawGPM.index = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-            station.gwrGPM.index = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-            station.PISCO.index = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-            station.rain4pe.index = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-            station.data.index = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
-            station.expGPM.index = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.rawGPM.index    = pd.to_datetime(station.rawGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.gwrGPM.index    = pd.to_datetime(station.gwrGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.PISCO.index     = pd.to_datetime(station.PISCO.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.rain4pe.index   = pd.to_datetime(station.rain4pe.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.data.index      = pd.to_datetime(station.data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            station.expGPM.index    = pd.to_datetime(station.expGPM.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        
         print("All datetime indexes migrated to pandas datetime format for all stations.")
+
+    def _remove_negatives(self):
+        
+        for key, station in self.final_data.items(): # Loop through each Station instance
+            # Clip all to avoid negatives
+            station.rawGPM['precipitationCal']  = station.rawGPM['precipitationCal'].clip(lower=0)
+            station.gwrGPM['precipitationCal']  = station.gwrGPM['precipitationCal'].clip(lower=0)
+            station.PISCO['precipitationCal']   = station.PISCO['precipitationCal'].clip(lower=0)
+            station.rain4pe['precipitationCal'] = station.rain4pe['precipitationCal'].clip(lower=0)
+            station.expGPM['precipitationCal']  = station.expGPM['precipitationCal'].clip(lower=0)
+
+        print("All datasets have been cleaned for negatives")
+
      
     def _run_scenarios(self):
         self.statsrawGPM_dict  = raise_stats(productStats, self.final_data, 'data', 'rawGPM', self.min_range, self.max_range, min_obs_threshold=self.min_threshold)
@@ -593,6 +619,7 @@ class Generator():
             for dataset_name in ['data','rawGPM', 'gwrGPM', 'PISCO', 'rain4pe', 'expGPM']:
                 dataset = getattr(station, dataset_name)
                 daily_precip = dataset.resample('D').sum()  # Resample to daily totals
+
                 for date, value in daily_precip.iterrows():
                     all_data.append({
                         'Station': key,
@@ -616,6 +643,7 @@ class Generator():
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+
 
 
     def plot_violin_stats(self, stat_name='kge'):
@@ -760,6 +788,10 @@ class Generator():
             di = pd.concat([di, df], axis=1)
         
         return di
+
+#==============================================================================================================================================
+
+
 
 
 class PrecipitationQualityChecker:

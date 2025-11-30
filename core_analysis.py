@@ -25,6 +25,7 @@ import contextily as cx
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 # functions to plot maps
 def get_pod_far_min_max(df):
     pod_cols = [col for col in df.columns if col.startswith('pod')]
@@ -146,13 +147,14 @@ def geo_plot(datasummary:pd.DataFrame,
     plt.show()
 
 def plot_extreme_indices_per_station(generator, station_name):
+
     sources = {
         "Observed": generator.extremeIndicesObserved,
-        "rawGPM": generator.extremeIndicesrawGPM,
-        "expGPM": generator.extremeIndicesexpGPM,
-        "gwrGPM": generator.extremeIndicesgwrGPM,
-        "PISCO": generator.extremeIndicesPISCO,
-        "rain4pe": generator.extremeIndicesrain4pe
+        "rawGPM"  : generator.extremeIndicesrawGPM,
+        "expGPM"  : generator.extremeIndicesexpGPM,
+        "gwrGPM"  : generator.extremeIndicesgwrGPM,
+        "PISCO"   : generator.extremeIndicesPISCO,
+        "rain4pe" : generator.extremeIndicesrain4pe
     }
 
     index_names = ["cdd", "cwd", "r10", "r20", "r95p", "r99p"]
@@ -192,6 +194,8 @@ def plot_extreme_indices_per_station(generator, station_name):
         plt.legend()
         plt.tight_layout()
         plt.show()
+
+
 # =============================================================================
 from analysis_class import *
 import matplotlib.pyplot as plt
@@ -205,22 +209,25 @@ import matplotlib.pyplot as plt
 
 cwd = os.getcwd()
 
-load_data_path=f'{cwd}/datasets/data_locked_loaded.pkl'
-min_range = '2005-01-01'
-max_range = '2018-12-31'
-min_threshold = 1.0
+load_data_path  =   f'{cwd}/datasets/data_locked_loaded.pkl'
+min_range       = '2005-01-01'
+max_range       = '2018-12-31'
+min_threshold   = 2.5
 
-generator_test = Generator(load_data_path,min_range,max_range, min_threshold)
-generator_test.plot_violin_stats(stat_name='alt')
-generator_test.plot_violin_precipitation()
+generator_test  = Generator(load_data_path,min_range,max_range, min_threshold)
+
+with open("export_results/generator_export.pkl", "wb") as f:
+    pickle.dump(generator_test, f)
+# generator_test.plot_violin_stats(stat_name='alt')
+# generator_test.plot_violin_precipitation()
 
 
-# Columns can be changed to any stat: ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
-generator_test.plot_probability_graph(pod_columnx='far', far_columny='pod')
-generator_test.plot_probability_graph(pod_columnx='alt', far_columny='pod')
-generator_test.plot_probability_graph(pod_columnx='min_sim', far_columny='rmse')
-minimos=generator_test.statsrain4pe_dict
-minimosgwr=generator_test.statsgwrGPM_dict
+# # Columns can be changed to any stat: ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
+# generator_test.plot_probability_graph(pod_columnx='far', far_columny='pod')
+# generator_test.plot_probability_graph(pod_columnx='alt', far_columny='pod')
+# generator_test.plot_probability_graph(pod_columnx='min_sim', far_columny='rmse')
+# minimos=generator_test.statsrain4pe_dict
+# minimosgwr=generator_test.statsgwrGPM_dict
 
 # Generates a summary for station, you can specify or exclude a list of scenarios, by default:
 # list_of_dict = ['statsrawGPM_dict','statsgwrGPM_dict','statsPISCO_dict','statsrain4pe_dict','statsexpGPM_dict']  
@@ -232,12 +239,12 @@ minimosgwr=generator_test.statsgwrGPM_dict
 # acumulate_comparison(generator_test.final_data, 'Mantaro_ Junin', 'yearly', '2005-01-01','2018-12-31')
 
 # Sorts the stations in function of altitude in a dictionary of stations, it replaces the original sort
-altitude_sort=sort_altitude(generator_test.final_data.keys(), generator_test.final_data)       
+# altitude_sort=sort_altitude(generator_test.final_data.keys(), generator_test.final_data)       
 
 # Returns a df summary of all stations over the analysis, it can be filtered with lists
-df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['fbi', 'far', 'pod'])
+# df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['fbi', 'far', 'pod'])
 # #Call a fbi, far, pod 'heat' map over multiple analysis
-heat_map(df)
+# heat_map(df)
 
 
 

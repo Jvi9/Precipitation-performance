@@ -234,7 +234,8 @@ class Station():
         sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
     
-        print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+        # print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+        
         
         point_name = self.name
     
@@ -287,20 +288,19 @@ class Station():
         numbdata1 = float(obs_data.count())
         numbdata2 = float(sim_data.count())
         # Print results
-        print(f" number of data {numbdata1} and {numbdata2}")
-        print(f"PBIAS is {pbias:.2f} in {point_name}")
-        print(f"MAE is {mae:.2f} in {point_name}")
-        print(f"RMSE is {rmse:.2f} in {point_name}")
-        print(f"R is {r:.2f} in {point_name}")
-        print(f"KGE is {kge:.2f} in {point_name}")
-        print(f"Zero count - Observed: {zero_obs}, Simulated: {zero_sim}")
-        print(f"Min/Max - Observed: ({min_obs}, {max_obs}), Simulated: ({min_sim}, {max_sim})")
+        # print(f" number of data {numbdata1} and {numbdata2}")
+        # print(f"PBIAS is {pbias:.2f} in {point_name}")
+        # print(f"MAE is {mae:.2f} in {point_name}")
+        # print(f"RMSE is {rmse:.2f} in {point_name}")
+        # print(f"R is {r:.2f} in {point_name}")
+        # print(f"KGE is {kge:.2f} in {point_name}")
+        # print(f"Zero count - Observed: {zero_obs}, Simulated: {zero_sim}")
+        # print(f"Min/Max - Observed: ({min_obs}, {max_obs}), Simulated: ({min_sim}, {max_sim})")
         # print(f"Zero match count (sim=0 & obs≈0): {zero_match}")
     
         return pbias, mae, rmse, r, kge, zero_sim, min_sim, max_sim
 
 
-    
     def _detection_capability(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
         """
         Calculates # FBI|Frecuency bias index, FAR|False Alarm ratio,
@@ -334,7 +334,7 @@ class Station():
         FAR = (false_alarms) / (hits + false_alarms)
         POD = (hits) / (hits + misses)
         accuracy = (hits + correct_negatives) / (hits + false_alarms + misses +correct_negatives)
-        print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
+        # print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
         return FBI, FAR, POD, accuracy
 
     def _extreme_indices(self, self_attr:str, start_date: str, end_date: str):
