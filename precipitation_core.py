@@ -211,7 +211,8 @@ class Station():
     #Funtion to calculate the PBIAS,MAE and RMSE in a dataframe using 2 columns
     def _performance(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str):
         """
-        Calculates PBIAS, MAE, RMSE, R, and KGE between simulated and observed data.
+        Calculates PBIAS, MAE, RMSE, R, and KGE between simulated and observed data,
+        along with count of zeros, min/max values, and zero_match indicator.
     
         Args:
             obs_attr (str): Attribute name for observed data.
@@ -220,7 +221,7 @@ class Station():
             end_date (str): End date of the period.
     
         Returns:
-            tuple: PBIAS, MAE, RMSE, R, KGE values as floats.
+            tuple: PBIAS, MAE, RMSE, R, KGE, zero_sim, min_sim, max_sim, zero_match
         """
         import numpy as np
         import pandas as pd
@@ -233,7 +234,8 @@ class Station():
         sim_data.index = pd.to_datetime(sim_data.index, format='%Y-%m-%d %H:%M:%S', errors='coerce')
         sim_data = sim_data.loc[start_date:end_date, 'precipitationCal']
     
-        print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+        # print(f'Data was homogenized to the same time range {start_date}:{end_date}')
+        
         
         point_name = self.name
     
@@ -264,21 +266,41 @@ class Station():
         std_sim = sim_data.std()
         std_obs = obs_data.std()
     
-        beta = mean_sim / mean_obs #bias ratio
-        gamma = (std_sim / mean_sim) / (std_obs / mean_obs) #variability ratio
+        beta = mean_sim / mean_obs
+        gamma = (std_sim / mean_sim) / (std_obs / mean_obs)
         kge = 1 - np.sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
         kge = float(kge)
+        
+        threshold = 0.2  # Define near-zero threshold    
+        # Additional metrics
+        zero_obs = int((obs_data == 0).sum())
+        zero_sim = int((sim_data == 0).sum())
+        close_zero = int(((sim_data > 0) & (sim_data < threshold)).sum())
     
+        min_obs = float(obs_data.min())
+        max_obs = float(obs_data.max())
+        min_sim = float(sim_data.min())
+        max_sim = float(sim_data.max())
+    
+        # Zero match: where sim_data == 0 and obs_data is near-zero
+        nonzero_match_mask = (obs_data > 0) & (sim_data > 0) & (sim_data < threshold)
+        min_sim = int(nonzero_match_mask.sum())
+        numbdata1 = float(obs_data.count())
+        numbdata2 = float(sim_data.count())
         # Print results
-        print(f"PBIAS is {pbias:.2f} in {point_name}")
-        print(f"MAE is {mae:.2f} in {point_name}")
-        print(f"RMSE is {rmse:.2f} in {point_name}")
-        print(f"R is {r:.2f} in {point_name}")
-        print(f"KGE is {kge:.2f} in {point_name}")
+        # print(f" number of data {numbdata1} and {numbdata2}")
+        # print(f"PBIAS is {pbias:.2f} in {point_name}")
+        # print(f"MAE is {mae:.2f} in {point_name}")
+        # print(f"RMSE is {rmse:.2f} in {point_name}")
+        # print(f"R is {r:.2f} in {point_name}")
+        # print(f"KGE is {kge:.2f} in {point_name}")
+        # print(f"Zero count - Observed: {zero_obs}, Simulated: {zero_sim}")
+        # print(f"Min/Max - Observed: ({min_obs}, {max_obs}), Simulated: ({min_sim}, {max_sim})")
+        # print(f"Zero match count (sim=0 & obs≈0): {zero_match}")
     
-        return pbias, mae, rmse, r, kge
+        return pbias, mae, rmse, r, kge, zero_sim, min_sim, max_sim
 
-    
+
     def _detection_capability(self, obs_attr: str, sim_attr: str, start_date: str, end_date: str, min_obs_threshold: float):
         """
         Calculates # FBI|Frecuency bias index, FAR|False Alarm ratio,
@@ -312,7 +334,7 @@ class Station():
         FAR = (false_alarms) / (hits + false_alarms)
         POD = (hits) / (hits + misses)
         accuracy = (hits + correct_negatives) / (hits + false_alarms + misses +correct_negatives)
-        print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
+        # print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
         return FBI, FAR, POD, accuracy
 
     def _extreme_indices(self, self_attr:str, start_date: str, end_date: str):
