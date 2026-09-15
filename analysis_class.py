@@ -10,19 +10,23 @@ import pickle
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+import seaborn as sns
 
 # =============================================================================
 """Posible solution for the storage of all the statistics
     Obiously all the data are being compared to the observations""" 
       
 class productStats():
-    def __init__(self, station_name, mae, pbias, rmse,r, kge, fbi, far, pod, acc, lat, lon, alt):
+    def __init__(self, station_name, mae, pbias, rmse,r, kge, zero_sim, min_sim, max_sim, fbi, far, pod, acc, lat, lon, alt):
         self.name = station_name
         self.mae = mae
         self.pbias = pbias
         self.rmse = rmse
         self.r = r
         self.kge = kge
+        self.zero_sim = zero_sim
+        self.min_sim = min_sim
+        self.max_sim = max_sim
         self.fbi = fbi
         self.far = far
         self.pod = pod
@@ -75,10 +79,10 @@ def raise_stats(object_creating ,dictionary: dict, obs_attr: str, sim_attr: str,
     
     for key in dictionary.keys():
         station_name = key
-        pbias, mae, rmse, r, kge = dictionary[key]._performance(obs_attr, sim_attr, start_date, end_date)
+        pbias, mae, rmse, r, kge, zero_sim, min_sim, max_sim = dictionary[key]._performance(obs_attr, sim_attr, start_date, end_date)
         fbi, far, pod, acc  = dictionary[key]._detection_capability(obs_attr, sim_attr, start_date, end_date, min_obs_threshold)
-        lat, lon, alt = dictionary[key].lat, dictionary[key].lon, dictionary[key].alt
-        dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, fbi, far, pod, acc, lat, lon, alt)
+        lat, lon, alt = dictionary[key].lat, dictionary[key].lon, float(dictionary[key].alt)
+        dummy_dictionary[key] = object_creating(station_name, mae, pbias, rmse, r, kge, zero_sim, min_sim, max_sim, fbi, far, pod, acc, lat, lon, alt)
         
     return dummy_dictionary
 
@@ -109,7 +113,7 @@ def parameters_report(dictionary: dict):
     # Collect all summaries dynamically
     combined_summary = pd.DataFrame({
         metric: [getattr(dictionary[key], metric) for key in dictionary.keys()]
-        for metric in ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']  # Add more metrics here as needed
+        for metric in ['mae', 'pbias', 'rmse', 'r', 'kge', 'zero_sim', 'min_sim', 'max_sim', 'fbi', 'far', 'pod', 'acc','alt']  # Add more metrics here as needed
     }, index=list(dictionary.keys()))
     
     return combined_summary
@@ -120,7 +124,7 @@ def station_summary(dictionary: dict, metrics: list = None):
     =['mae', 'pbias', 'rmse', 'fbi', 'far', 'pod', 'acc']"""
 
     if metrics is None:
-        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
+        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'zero_sim', 'min_sim', 'max_sim', 'fbi', 'far', 'pod', 'acc']
     # Dynamically create a DataFrame for all specified metrics
     
     summary = pd.DataFrame({
@@ -205,7 +209,7 @@ def join_stats(list_of_dictionaries: [dict], metrics: list = None) -> pd.DataFra
     """
     # Set default metrics if none are provided
     if metrics is None:
-        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
+        metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'zero_sim', 'min_sim', 'max_sim', 'fbi', 'far', 'pod', 'acc']
     
     di = pd.DataFrame()  # Initialize an empty DataFrame
     
@@ -499,7 +503,7 @@ class Generator():
         self._set_pandas_time()
         self._run_scenarios()
         self._run_extremeIndices()
-        
+        print("Generator generated successfully!")
     def _load_data(self):
         # Load the dictionary from the specified path as final_data
         with open(self.load_data_path, 'rb') as file:
@@ -577,6 +581,83 @@ class Generator():
         plt.legend()
         plt.show()
 
+    def plot_violin_precipitation(self):
+        print("Preparing data for violin plot...")
+    
+        # Create a list to hold all the data
+        all_data = []
+    
+        # Loop through each station
+        for key, station in self.final_data.items():
+            # For each dataset, get daily precipitation and add to the list
+            for dataset_name in ['data','rawGPM', 'gwrGPM', 'PISCO', 'rain4pe', 'expGPM']:
+                dataset = getattr(station, dataset_name)
+                daily_precip = dataset.resample('D').sum()  # Resample to daily totals
+                for date, value in daily_precip.iterrows():
+                    all_data.append({
+                        'Station': key,
+                        'Date': date,
+                        'Precipitation': value.values[0],  # Assuming single column
+                        'Dataset': dataset_name
+                    })
+    
+        # Convert to DataFrame
+        df = pd.DataFrame(all_data)
+    
+        # Drop NaNs just in case
+        df.dropna(subset=['Precipitation'], inplace=True)
+    
+        print("Plotting violin graph...")
+        plt.figure(figsize=(12, 6))
+        sns.violinplot(x='Dataset', y='Precipitation', data=df, inner='box', palette='Set2')
+        plt.title('Daily Precipitation Distribution by Dataset')
+        plt.ylabel('Precipitation (mm)')
+        plt.xlabel('Dataset')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+
+    def plot_violin_stats(self, stat_name='kge'):
+        print(f"Preparing violin plot for statistic: {stat_name}")
+    
+        # Create a list to hold all the data
+        all_stats = []
+    
+        # Define your datasets and their corresponding stats dictionaries
+        dataset_stats = {
+            'rawGPM': self.statsrawGPM_dict,
+            'gwrGPM': self.statsgwrGPM_dict,
+            'PISCO': self.statsPISCO_dict,
+            'rain4pe': self.statsrain4pe_dict,
+            'expGPM': self.statsexpGPM_dict
+        }
+    
+        # Loop through each dataset and each station
+        for dataset_name, stats_dict in dataset_stats.items():
+            for station_name, stats_obj in stats_dict.items():
+                # Get the desired stat from the stats object
+                value = getattr(stats_obj, stat_name, None)
+                if value is not None:
+                    all_stats.append({
+                        'Station': station_name,
+                        'Dataset': dataset_name,
+                        'Statistic': float(value)
+                    })
+    
+        # Convert to DataFrame
+        df = pd.DataFrame(all_stats)
+    
+        print("Plotting violin graph...")
+        plt.figure(figsize=(10, 6))
+        sns.violinplot(x='Dataset', y='Statistic', data=df, inner='box', palette='Set3')
+        plt.title(f'Distribution of {stat_name.upper()} Across Datasets')
+        plt.ylabel(stat_name.upper())
+        plt.xlabel('Dataset')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
 
     def metrics_over_analysis(self, station_name: str, list_of_dictionaries: list = None):
         station_over_analysis = {}
@@ -616,13 +697,13 @@ class Generator():
     def geo_summary(self):
         rows = []
         # Loop through the data
-        for key, other in self.final_data.items():
+        for key, other in self.final_data.copy().items():
             name = key
             lat = self.final_data[key].lat
             lon = self.final_data[key].lon
-            
+            alt = self.final_data[key].alt
             # Append a dictionary for each row
-            rows.append({'station': name, 'lat': lat, 'lon': lon})
+            rows.append({'station': name, 'lat': lat, 'lon': lon, 'alt': alt})
 
         # Create a DataFrame from the list of dictionaries
         geo_sum = pd.DataFrame(rows)
@@ -637,7 +718,7 @@ class Generator():
         Args:
             list_of_dictionaries (list[str]): A list of attribute names referring to dictionaries in the class.
             metrics (list): A list of metric names to filter the columns.
-                            Defaults to ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc'].
+                            Defaults to ['mae', 'pbias', 'rmse', 'r', 'kge', 'zero_sim', 'min_sim', 'max_sim', 'fbi', 'far', 'pod', 'acc'].
         
         Returns:
             pd.DataFrame: A combined DataFrame with renamed and filtered columns.
@@ -654,7 +735,7 @@ class Generator():
             
         # Set default metrics if none are provided
         if metrics is None:
-            metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'fbi', 'far', 'pod', 'acc']
+            metrics = ['mae', 'pbias', 'rmse', 'r', 'kge', 'zero_sim', 'min_sim', 'max_sim', 'fbi', 'far', 'pod', 'acc']
         
         di = pd.DataFrame()  # Initialize an empty DataFrame
         
