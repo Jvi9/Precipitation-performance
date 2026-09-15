@@ -233,13 +233,113 @@ minimosgwr=generator_test.statsgwrGPM_dict
 
 # Sorts the stations in function of altitude in a dictionary of stations, it replaces the original sort
 altitude_sort=sort_altitude(generator_test.final_data.keys(), generator_test.final_data)       
-
 # Returns a df summary of all stations over the analysis, it can be filtered with lists
 df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['fbi', 'far', 'pod'])
+dT = generator_test.join_stats(list_of_dictionaries = None,metrics = ['r'])
 # #Call a fbi, far, pod 'heat' map over multiple analysis
 heat_map(df)
+# =============================================================================
+# noteapd
+daltitude = [] 
+for item, obj in generator_test.final_data.items():
+    b=obj.alt
+    a=obj.name
+    filt=(a,b)
+    daltitude.append(filt)
+df_alt = pd.DataFrame(daltitude, columns=["name", "alt"])
+
+df = df.merge(df_alt, left_index=True, right_on="name")
+# df = df.drop("name", axis=1)
+df = df.set_index("name")
+df["alt"] = df["alt"].astype(float)
+
+altitude_summary = df.loc[altitude_sort]
+altitude_summary = df.sort_values(by="alt", ascending=False)
+altitude_summary = altitude_summary.drop(['fbi_PISCO', 'far_PISCO',
+                                          'pod_PISCO', 'fbi_rain4pe',
+                                          'far_rain4pe', 'pod_rain4pe'],
+                                         axis=1)
+import uuid
+def plot_by_prefix(df, prefix, altitude_sort=True, save=True):
+    """
+    Filter DataFrame columns by prefix and plot them as line plots.
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import uuid, os
+
+    # --- Professional plotting style ---
+    mpl.rcParams.update({
+        "font.size": 12,
+        "font.family": "serif",
+        "axes.edgecolor": "black",
+        "axes.linewidth": 0.8,
+        "axes.grid": True,
+        "grid.color": "0.85",
+        "grid.linewidth": 0.6,
+        "lines.linewidth": 1.0,
+        "lines.markersize": 4,
+        "figure.dpi": 200
+    })
+
+    # Use muted scientific color palette
+    from matplotlib.cm import get_cmap
+    colors = get_cmap("tab10").colors  # subdued, not shiny
+
+    # sort
+    if altitude_sort:
+        df = df.sort_values(by="alt", ascending=False)
+
+    cols = [c for c in df.columns if c.startswith(prefix)]
+    if not cols:
+        raise ValueError(f"No columns found with prefix '{prefix}'")
+
+    # labels =["GPM-IMERGF", "GPM-GWR", "GPM-EXP"] #when drop it
+    labels =["GPM-IMERGF", "GPM-GWR","PISCO", "RAIN4PE","GPM-EXP"]
+    # plot
+    plt.figure(figsize=(10, 6))
+    # for i, c in enumerate(cols):
+    #     plt.plot(df["alt"], df[c],
+    #               marker='o',
+    #               linestyle='--',#None
+    #               color=colors[i % len(colors)],
+    #               label=c)
+    for i, (c, lab) in enumerate(zip(cols, labels)):
+        plt.plot(
+            df["alt"], df[c],
+            marker='o',
+            linestyle='--',
+            color=colors[i % len(colors)],
+            label=lab   # <-- hardwritten label
+        )
+
+    # plt.title(f"{prefix.upper()} vs Altitude (stations sorted by altitude)")
+    plt.xlabel("Elevation (m)")
+    plt.ylabel(prefix.upper())
+    plt.legend(frameon=False)
+    
+    if save:
+        short_uuid = uuid.uuid4().hex[:6]
+        filename = f"plot_{prefix}_{short_uuid}.png"
+        bucket = r"C:\Users\jvila\Desktop\Andean_project\graphs"
+        path = os.path.join(bucket, filename)
+        plt.savefig(path, dpi=600, bbox_inches="tight")
+        print(f"Saved figure as {filename}")
+
+    plt.show()
 
 
+
+# Example: plot FBI metrics
+plot_by_prefix(altitude_summary, "fbi", altitude_sort=True, save=True)
+
+# Example: plot POD metrics
+plot_by_prefix(altitude_summary, "pod", altitude_sort=True, save=True)
+
+# Example: plot FAR metrics
+plot_by_prefix(altitude_summary, "far", altitude_sort=True, save=True)
+
+# =============================================================================
 
 # Plotting Extreme Indices for a random station
 station = 'Perene_ Runatullo'
@@ -376,7 +476,7 @@ import contextily as cx
 
 # === Load your data ===
 # Main data
-df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['far', 'pod','acc','pbias'])
+df = generator_test.join_stats(list_of_dictionaries = None, metrics = ['r','fbi','far', 'pod','acc','pbias'])
 
 # Geolocation data
 geo_df = generator_test.geo_summary()
