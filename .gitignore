@@ -8,3 +8,5 @@ __pycache__
 *.csv
 *.xlsx
 graphs/
+datasets/data_locked_loaded_clipped.pkl
+datasets/data_locked_loaded.pkl
