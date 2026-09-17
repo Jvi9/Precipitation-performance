@@ -3,6 +3,7 @@ desktop.ini
 *.png
 *.ini
 *__pycache__/
+**__pycache__/
 __pycache__
 *.csv
 *.xlsx
