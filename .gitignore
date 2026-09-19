@@ -1,6 +1,5 @@
 .spyproject/
 desktop.ini
-*.png
 *.ini
 *__pycache__/
 **__pycache__/
