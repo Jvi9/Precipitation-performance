@@ -42,6 +42,4 @@ A new folder **`sensitivity/`** contains:
 - Updated metrics and evaluation summaries
 
 ## Taylor Diagram Preview
-```markdown
-   ![Taylor Diagram](taylor_diagram.png)
-```
+![Taylor Diagram](taylor_diagram.png)
