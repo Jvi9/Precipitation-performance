@@ -14,35 +14,35 @@
 ```
 Schema of the code
 precipitation-performance/
-├── data/                       # Contains ground station information in csv
-├── graphs/                     # Relevant comparison graphs
-├── datasets/                     # Pickle format of the loaded precipitation datasets
-│   ├── gb_stations_data.pkl        # Contains only the station information
-│   ├── data_locked_loaded.pkl      # Contains all the datasets added
-├── gis/                    
-│   ├── ...  	              # shps, kml, and other auxiliar info
-│   ├── all_stations_locations.kml  # all the stations in the area
-│   ├── selected_stations.kml       # stations kml multipoint file filtered
-│ 
-├── loader/                    
-│   ├── load_datasets.py  	    # Load the data sources
-├── precipitation_core.py  	# Process ground station information retrieved from ANA (Peru) platform
-├── analysis_class.py            # Functions and classes to process the information
-├── core_analysis.py            # Process the information in a easy and interactive way
-
+├── data/                       # Ground station information (CSV)
+├── graphs/                     # Local graphs and visualizations
+│   ├── taylor_diagram.png      # Taylor diagram preview
+├── datasets/                   # Pickle format precipitation datasets
+│   ├── gb_stations_data.pkl
+│   ├── data_locked_loaded.pkl
+├── gis/
+│   ├── ...                     # Shapefiles, KML, auxiliary GIS data
+│   ├── all_stations_locations.kml
+│   ├── selected_stations.kml
+├── loader/
+│   ├── load_datasets.py        # Load the data sources
+├── precipitation_core.py       # Process ANA station information
+├── analysis_class.py           # Classes and functions for analysis
+├── core_analysis.py            # Interactive analysis workflow
+├── sensitivity/                # NEW: latest sensitivity analysis + outputs
+├── outputs/                # NEW: latest sensitivity analysis + outputs
+│   ├── results_geoparquet.parquet   # Combined results from all datasets
 ```
+## Sensitivity Analysis (NEW)
 
-<h2>Preview statistics from the scenarios ran</h2>
+A new folder **`sensitivity/`** contains:
 
-<img src="https://github.com/user-attachments/assets/d9fc7cbb-1b5e-48a8-88d3-f221691becfe" width="350">
-<img src="https://github.com/user-attachments/assets/87570789-a8ef-4130-be44-cca42866a308" width="350">
-<img src="https://github.com/user-attachments/assets/3a57b238-8d3d-4c1f-ab2d-4c4abfcdbacc" width="350">
-<img src="https://github.com/user-attachments/assets/52f3ead7-cc2f-401c-bc32-edf8278df8be" width="350">
+- The **latest analysis outputs**
+- A **GeoParquet file** with merged results from all precipitation datasets
+- Updated metrics and evaluation summaries
 
-<h2>Preview view: multipoint maps</h2>
+## Taylor Diagram Preview
 
-<img src="https://github.com/user-attachments/assets/31a5cbfa-4f59-4075-9e7e-3d3d58740769" width="350">
-<img src="https://github.com/user-attachments/assets/60ec4354-67fb-4f16-b44a-b4070fadb0e5" width="350">
-<img src="https://github.com/user-attachments/assets/9a59b283-8858-48ca-96a3-318972b78d00" width="350">
-<img src="https://github.com/user-attachments/assets/8c099784-b766-4bb9-a95b-592547fc353b" width="350">
-<img src="https://github.com/user-attachments/assets/5121b07e-b75b-463c-b916-378f03d298f4" width="350">
+To include the Taylor diagram stored locally at:
+```markdown
+![Taylor Diagram](taylor_diagram.png)
