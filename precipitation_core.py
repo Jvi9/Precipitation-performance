@@ -31,6 +31,39 @@ from datetime import datetime, timedelta
 # import rioxarray
 # from shapely.geometry import mapping
 
+"""
+    The goal here will be create a class call station that can store
+    all datasets in an attribute to later just cast the stats needed
+    between them
+"""
+import os
+import csv
+import pandas as pd
+import numpy as np
+import xarray as xr
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import simplekml
+
+# import geopandas as gpd
+# from shapely.geometry import Polygon
+# from tqdm import tqdm  #status bar
+# from rasterio.warp import calculate_default_transform, reproject, Resampling
+# from rasterio.windows import from_bounds
+# from sklearn.linear_model import LinearRegression
+# from rasterio.transform import from_origin
+# from rasterio.enums import Resampling
+# from scipy.ndimage import generic_filter
+# from sklearn.metrics import r2_score
+# from scipy.optimize import curve_fit
+# import rasterio
+# from rasterio.plot import show
+# import re
+from datetime import datetime, timedelta
+# import pysal
+# import rioxarray
+# from shapely.geometry import mapping
+
 class Station(): 
     def __init__(self, name, file_path):
         self.name = name
@@ -313,6 +346,12 @@ class Station():
     
         Returns:
             tuple: FBI, FAR, POD and Accuracy values as floats.
+
+        NOTE (verification item, unchanged from original logic): min_obs_threshold
+        is applied only to sim_data below (obs_data still uses a fixed >0 / ==0
+        split). If you want a fully symmetric "unified threshold" definition
+        applied to both obs and sim, that is a separate, deliberate change -
+        flag if you want it and I'll patch it.
         """
         obs_data = getattr(self, obs_attr)
         obs_data = obs_data.copy()
@@ -337,7 +376,7 @@ class Station():
         print(f"Stats are: FBI {FBI}, FAR:{FAR}, POD {POD}, Accuracy {accuracy} for {self.name}")
         return FBI, FAR, POD, accuracy
 
-    def _extreme_indices(self, self_attr:str, start_date: str, end_date: str):
+    def _extreme_indices(self, self_attr:str, start_date: str, end_date: str, wet_threshold: float = 1.0):
         """
         Calculates extreme indicators between simulated and observed data.
         The indicators are based on Expert Team on Climate Change Detection and Indices (ETCCDI)  http://etccdi.pacificclimate.org.
@@ -350,16 +389,21 @@ class Station():
             self_attr (str)   : Attribute name for source of data (e.g., "data","rawGPM")
             start_date (str) : Start date of the period.
             end_date (str)   : End date of the period.
+            wet_threshold (float): CHANGED - precipitation (mm/day) at/above which a day
+                counts as "wet" for CDD/CWD. Previously hardcoded to 1mm; now a parameter
+                so it can be set to match Generator.min_threshold (the same value used
+                for FBI/FAR/POD/ACC), keeping the two analyses coherent. Defaults to 1.0
+                to preserve the original ETCCDI convention/behaviour if omitted.
             
         Calculated parameters:
         
             *Counter Indices*
-            Consecutive dry days (CDD) : Number of consecutive days with precipitation < 1mm.
-            Consecutive wet days (CWD) : Number of consecutive days with precipitation > 1mm.
+            Consecutive dry days (CDD) : Number of consecutive days with precipitation < wet_threshold.
+            Consecutive wet days (CWD) : Number of consecutive days with precipitation > wet_threshold.
             Number of heavy precipitation days (R10)      : Number of days with precipitation > 10mm.
             Number of very heavy precipitation days (R20) : Number of days with precipitation > 20mm.
             
-            *Percentile Indices*
+            *Percentile Indices*  (UNCHANGED - independent of wet_threshold)
             Very wet days (R95p)      : Annual total precipitation when daily precipitation > 95th percentile.    
             Extremely wet days (R99p) : Annual total precipitation when daily precipitation > 99th percentile.
             
@@ -385,8 +429,8 @@ class Station():
         years = data.index.year.unique()
         ext_ind_dict['cwd'] = pd.Series({
             year: (group := data[data.index.year == year])  
-                .pipe(lambda x: (x > 1).astype(int)) #Count wet days
-                .groupby((group <= 1).cumsum())      #Stop count when dry day is found
+                .pipe(lambda x: (x > wet_threshold).astype(int)) #Count wet days
+                .groupby((group <= wet_threshold).cumsum())      #Stop count when dry day is found
                 .sum()                               #Sum counts
                 .max(skipna=True)                    #Get max count of wet days  for the year -->cwd
             for year in years
@@ -394,8 +438,8 @@ class Station():
         
         ext_ind_dict['cdd'] = pd.Series({
             year: (group := data[data.index.year == year])  
-                .pipe(lambda x: (x < 1).astype(int)) #Count dry days
-                .groupby((group >= 1).cumsum())      #Stop count when wet day is found
+                .pipe(lambda x: (x < wet_threshold).astype(int)) #Count dry days
+                .groupby((group >= wet_threshold).cumsum())      #Stop count when wet day is found
                 .sum()                               #Sum counts
                 .max(skipna=True)                    #Get max count of dry days for the year -->cdd   
             for year in years
