@@ -1,91 +1,93 @@
-# -*- coding: utf-8 -*-
 """
-Figure 6 (redone as boxenplot / letter-value plot instead of violin):
-distribution of CSI (a), FBI (b), FAR (c), POD (d) across all 5 products.
-
-A boxenplot shows the median, then the IQR (25th-75th) as the first box,
-then successively narrower boxes extending outward by repeatedly halving
-the remaining tail (12.5th-87.5th, 6.25th-93.75th, ...) - box width reflects
-the density of data in that quantile band. This is what seaborn calls
-boxenplot (originally "letter-value plot", Hofmann/Wickham/Kafadar 2011) -
-built specifically for showing more distributional detail than a standard
-box plot without the bandwidth-tuning ambiguity of a violin plot.
-
-CSI is derived from POD/FAR (same formula used throughout); FBI, FAR, and
-POD are already stored GeoParquet columns.
+File: fig_6_boxplot.py
+Author: Jose P. Teran
+Github: jopator
+Date: 2026-10-02
+Description: Boxen plots of categorical (detection) statistics across all datasets
+             Figure 6 of manuscript: CSI (a), FBI (b), FAR (c), POD (d).
+             A boxenplot shows the median, then the IQR (25th-75th) as the first box,
+             then successively narrower boxes halving the remaining tail
+             (12.5th-87.5th, 6.25th-93.75th, ...) ("letter-value plot", Hofmann/Wickham/Kafadar 2011).
+             CSI is derived from POD and FAR; FBI, FAR and POD are stored GeoParquet columns.
 """
+
+
 import os
-import numpy as np
-import pandas as pd
+from pathlib import Path
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
+from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS
 
-from configurations import PLOT_ORDER, DISPLAY_NAMES, PRODUCT_COLORS
+repoDir = Path(__file__).resolve().parents[1]
 
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-geoparquet_path = os.path.join(wkDir, 'outputs', 'station_metrics_1mm_clipped.parquet')
-out_dir = os.path.join(wkDir, 'graphs')
-os.makedirs(out_dir, exist_ok=True)
+# Dirs
+metrics_parquetFN   = repoDir / 'outputs/station_metrics_1mm_clipped.parquet'        # parquet with metrics
+plotDir             = repoDir / 'graphs'
+os.makedirs(plotDir, exist_ok=True)
 
-gdf = gpd.read_parquet(geoparquet_path)
+# --------------
+# Plot settings
+# --------------
+
+plt.rcParams.update({
+    'xtick.labelsize':  10,     # axis tick labels
+    'ytick.labelsize':  10,
+    'legend.fontsize':  10,
+    'axes.labelsize':   12,     # axis labels
+    'axes.titlesize':   14,     # subplot titles
+    'figure.titlesize': 14,     # suptitle
+    'savefig.dpi':      300,
+})
+
 display_order = [DISPLAY_NAMES[c] for c in PLOT_ORDER]
 palette = {DISPLAY_NAMES[c]: PRODUCT_COLORS[c] for c in PLOT_ORDER}
 
-# =============================================================================
-# 1. Build a tidy long-format table for CSI, FBI, FAR, POD
-# =============================================================================
-rows = []
+stat_labels = {
+    'csi': 'CSI',
+    'fbi': 'FBI',
+    'far': 'FAR',
+    'pod': 'POD',
+}
+panel_labels = ['(a)', '(b)', '(c)', '(d)']
+
+# --------------
+# Load data
+# --------------
+
+metrics_df = gpd.read_parquet(metrics_parquetFN)
+
+# CSI is not in the parquet, derived from POD and FAR: CSI = 1 / (1/POD + 1/(1-FAR) - 1)
 for code in PLOT_ORDER:
-    sr = 1 - gdf[f'far_{code}']
-    pod = gdf[f'pod_{code}']
+    pod, far = metrics_df[f'pod_{code}'], metrics_df[f'far_{code}']
     with np.errstate(divide='ignore', invalid='ignore'):
-        csi = 1.0 / (1.0 / pod + 1.0 / sr - 1.0)
+        metrics_df[f'csi_{code}'] = 1 / (1 / pod + 1 / (1 - far) - 1)
 
-    for station, csi_v, fbi_v, far_v, pod_v in zip(
-        gdf['station'], csi, gdf[f'fbi_{code}'], gdf[f'far_{code}'], gdf[f'pod_{code}']
-    ):
-        rows.append({
-            'station': station, 'product': DISPLAY_NAMES[code],
-            'CSI': csi_v, 'FBI': fbi_v, 'FAR': far_v, 'POD': pod_v,
-        })
 
-long_df = pd.DataFrame(rows)
+def metric_long(stat):
+    """Wide parquet columns ({stat}_{code}) -> long df with Dataset / Statistic columns."""
+    cols = {f'{stat}_{code}': DISPLAY_NAMES[code] for code in PLOT_ORDER}
+    return (metrics_df[list(cols)].rename(columns=cols)
+            .melt(var_name='Dataset', value_name='Statistic'))
 
-# =============================================================================
-# 2. 2x2 boxenplot grid: CSI (a), FBI (b), FAR (c), POD (d)
-# =============================================================================
-fig, axes = plt.subplots(2, 2, figsize=(24, 12))
-panel_specs = [
-    ('CSI', axes[0, 0], 'a', None),
-    ('FBI', axes[0, 1], 'b', 1.0),   # reference line at FBI = 1 (unbiased)
-    ('FAR', axes[1, 0], 'c', None),
-    ('POD', axes[1, 1], 'd', None),
-]
 
-for metric, ax, panel_letter, ref_line in panel_specs:
-    sns.boxenplot(data=long_df, x='product', y=metric, order=display_order,
-                 ax=ax, palette=palette, showfliers=True)
-    if ref_line is not None:
-        ax.axhline(ref_line, color='black', linestyle='--', linewidth=1, alpha=0.7)
+# --------------
+# Figure 6 -> Boxen plots. No significant change. Just clearer fonts, color scheme and consistent higher dpi.
+# --------------
+
+fig, axs = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
+for i, (ax, stat_name) in enumerate(zip(axs.ravel(), stat_labels)):
+    sns.boxenplot(x='Dataset', y='Statistic', hue='Dataset',
+                  data=metric_long(stat_name), palette=palette,
+                  order=display_order, hue_order=display_order, legend=False, ax=ax)
     ax.set_xlabel('')
-    ax.set_ylabel(metric, fontsize=16)
-    ax.set_title(f'({panel_letter}) {metric}', fontsize=17, loc='left')
-    ax.tick_params(axis='x', rotation=20)
-    ax.grid(axis='y', alpha=0.3)
+    ax.set_ylabel(stat_labels[stat_name])
+    ax.grid(True, alpha=0.3)
+    ax.text(-0.1, 1.05, panel_labels[i], transform=ax.transAxes,
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold')
 
-fig.suptitle('Distribution of forecasting indices across all datasets', fontsize=21, y=1.02)
-plt.tight_layout()
-
-out_path = os.path.join(out_dir, 'forecasting_indices_boxenplot.png')
-plt.savefig(out_path, dpi=300, bbox_inches='tight')
-plt.show()
-print(f"Saved {out_path}")
-
-# =============================================================================
-# 3. Summary stats for the caption/text
-# =============================================================================
-for metric in ['CSI', 'FBI', 'FAR', 'POD']:
-    print(f"\n--- {metric} distribution by product ---")
-    summary = long_df.groupby('product')[metric].agg(['median', 'mean', 'std']).reindex(display_order)
-    print(summary.round(3).to_string())
+fig.tight_layout()
+fig.savefig(plotDir / 'fig6_categorical_metrics.png', bbox_inches='tight')
+plt.close(fig)

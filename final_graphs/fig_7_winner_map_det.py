@@ -1,311 +1,220 @@
-# -*- coding: utf-8 -*-
 """
-ONE combined figure, 4 map panels in a 2x2 grid - the SAME map type run twice:
-
-  TOP ROW    - full comparison, all 5 products:
-               (a) best-performing product by CSI, per hydrographic unit
-               (b) FBI (discrete classes) of that CSI-winning product
-
-  BOTTOM ROW - GPM family only (rawGPM/gwrGPM/expGPM - Rain4PE/PISCO excluded
-               since they dominate the scale so completely that the GPM
-               variants' real differences from each other are invisible
-               whenever all 5 share a plot):
-               (c) best-performing GPM variant by CSI, per hydrographic unit
-               (d) FBI of that GPM-family CSI-winner, per hydrographic unit
-               NOTE: bottom-row FBI bins are DIFFERENT from the top row -
-               the GPM family's FBI values sit in a different, narrower
-               range (see the printed range below) than the full
-               comparison's winners, so reusing the top row's bins would
-               likely make the bottom map look flat again. Check the
-               printed range and retune bias_bins_gpm if needed.
+File: fig_7_winner_map_det.py
+Author: Jose P. Teran
+Github: jopator
+Date: 2026-10-02
+Description: Winner maps with subbasin (UH) subdivision - categorical (detection) metrics
+             Figure 7 of manuscript, 1x4 panels:
+               (a) dataset with best CSI per station + dominant winner per subbasin
+               (b) FBI of the winner (station and subbasin mean)
+               (c), (d) same, restricted to GPM-based products
+             CSI is derived from POD and FAR.
 """
+
+
 import os
+from pathlib import Path
+
+import geopandas as gpd
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from shapely.geometry import Point
-try:
-    import contextily as cx
-    HAVE_CONTEXTILY = True
-except ImportError:
-    HAVE_CONTEXTILY = False
+from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS, PRODUCT_MARKERS
+from matplotlib.cm import ScalarMappable
+from matplotlib.lines import Line2D
 
-from configurations import PLOT_ORDER, DISPLAY_NAMES, PRODUCT_COLORS, PRODUCT_MARKERS
+repoDir = Path(__file__).resolve().parents[1]
 
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-geoparquet_path = os.path.join(wkDir, 'outputs', 'station_metrics_1mm_clipped.parquet')
-uh_shp_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_uhs\study_uhs.shp'
-out_dir = os.path.join(wkDir, 'graphs')
-os.makedirs(out_dir, exist_ok=True)
+# Dirs
+metrics_parquetFN   = repoDir / 'outputs/station_metrics_1mm_clipped.parquet'        # parquet with metrics
+uhsFN               = repoDir / 'gis/study_uhs/study_uhs.shp'                        # subbasins (UHs)
+plotDir             = repoDir / 'graphs'
+os.makedirs(plotDir, exist_ok=True)
+
+# --------------
+# Plot settings
+# --------------
+
+plt.rcParams.update({
+    'xtick.labelsize':  10,     # axis tick labels
+    'ytick.labelsize':  10,
+    'legend.fontsize':  10,
+    'axes.labelsize':   12,     # axis labels
+    'axes.titlesize':   14,     # subplot titles
+    'figure.titlesize': 14,     # suptitle
+    'savefig.dpi':      300,
+})
 
 GPM_FAMILY = ['rawGPM', 'gwrGPM', 'expGPM']
+panel_labels = ['(a)', '(b)', '(c)', '(d)']
+map_fontsize = plt.rcParams['legend.fontsize']
 
-# --- Toggle: show a minimal lat/lon coordinate box on each map? ---
-# Kept OFF by default reasoning: turn on to try it, off to go back to the
-# clean, label-only look. When on, only a few tick marks with degree labels
-# appear on the left/bottom edges - no full grid, to avoid clutter.
-SHOW_COORD_BOX = False
+# FBI classes, same for both product sets: 1 is unbiased; <1 underestimates rain-event
+# frequency (brown), >1 overestimates (green). Open classes below 0.5 and above 1.5
+FBI_BOUNDS = [0.5, 0.7, 0.9, 1.1, 1.3, 1.5]
+_n_colors = len(FBI_BOUNDS) + 1     # 5 classes + 'min' and 'max' extensions
+FBI_CMAP = mcolors.ListedColormap(plt.get_cmap('BrBG')(np.linspace(0.05, 0.95, _n_colors)))
+FBI_NORM = mcolors.BoundaryNorm(FBI_BOUNDS, _n_colors, extend='both')
 
-import math
-from matplotlib.ticker import MaxNLocator, FuncFormatter
+ERROR_FILL_ALPHA = 0.8     # subbasin fill transparency on the FBI panels
 
-def _webmerc_to_lon(x, pos=None):
-    return f"{x / 20037508.34 * 180:.2f}°"
+# Subbasin label positions (axes fraction), placed outside the subbasins with a leader line
+LABEL_POS = {
+    'Alto Marañón IV': (0.56, 0.96),
+    'Crisnejas':       (0.06, 0.67),
+    'Alto Marañón V':  (0.10, 0.55),
+    'Alto Huallaga':   (0.20, 0.43),
+    'Pachitea':        (0.68, 0.68),
+    'Perené':          (0.28, 0.34),
+    'Mantaro':         (1.00, 0.12),     # right of the basin, clear of the legend and below the colorbar
+}
 
-def _webmerc_to_lat(y, pos=None):
-    lat = math.degrees(2 * math.atan(math.exp(y / 20037508.34 * math.pi)) - math.pi / 2)
-    return f"{lat:.2f}°"
+no_coverage_patch = mpatches.Patch(facecolor='white', edgecolor='grey', hatch='////', label='No station coverage')
 
-def apply_coord_box(ax):
-    """Minimal lat/lon tick labels on the left/bottom edges - no full grid,
-    just enough to orient the reader without cluttering the map."""
-    ax.set_axis_on()
-    ax.xaxis.set_major_locator(MaxNLocator(4))
-    ax.yaxis.set_major_locator(MaxNLocator(4))
-    ax.xaxis.set_major_formatter(FuncFormatter(_webmerc_to_lon))
-    ax.yaxis.set_major_formatter(FuncFormatter(_webmerc_to_lat))
-    ax.tick_params(axis='both', labelsize=9, length=3, colors='dimgray')
-    for spine in ['top', 'right']:
-        ax.spines[spine].set_visible(False)
-    for spine in ['bottom', 'left']:
-        ax.spines[spine].set_color('dimgray')
-        ax.spines[spine].set_linewidth(0.6)
+# --------------
+# Load data
+# --------------
 
+metrics_df = gpd.read_parquet(metrics_parquetFN)
 
-def find_label_position(polygon, clutter_points, grid_n=40):
-    minx, miny, maxx, maxy = polygon.bounds
-    xs = np.linspace(minx, maxx, grid_n)
-    ys = np.linspace(miny, maxy, grid_n)
-    best_point, best_dist = None, -1
-    for x in xs:
-        for y in ys:
-            pt = Point(x, y)
-            if polygon.contains(pt):
-                d = min((pt.distance(cp) for cp in clutter_points), default=0)
-                if d > best_dist:
-                    best_dist, best_point = d, pt
-    return best_point if best_point is not None else polygon.representative_point()
-
-
-def place_all_labels(ax, uh_plot_web, clutter_points, text_fn, fontsize=11):
-    placed_points = []
-    for _, row in uh_plot_web.iterrows():
-        avoid = clutter_points + placed_points
-        label_pt = find_label_position(row.geometry, avoid)
-        placed_points.append(label_pt)
-        ax.annotate(text_fn(row), xy=(label_pt.x, label_pt.y), ha='center', va='center',
-                   fontsize=fontsize, fontweight='bold',
-                   bbox=dict(boxstyle='round,pad=0.25', facecolor='white', alpha=0.85, edgecolor='gray'))
-
-
-# =============================================================================
-# 1. Load UH polygons, resolve N5-preferred/N4-fallback name; join stations
-# =============================================================================
-uh = gpd.read_file(uh_shp_path)
-for col in ['NOMB_UH_N5', 'NOMB_UH_N4']:
-    uh[col] = uh[col].replace('', np.nan)
-uh['UH_NAME'] = uh['NOMB_UH_N5'].fillna(uh['NOMB_UH_N4'])
-
-gdf = gpd.read_parquet(geoparquet_path)
-gdf_uh_crs = gdf.to_crs(uh.crs)
-joined = gpd.sjoin(gdf_uh_crs, uh[['UH_NAME', 'geometry']], how='left', predicate='within')
-
-# =============================================================================
-# 2. Per-UH, per-product CSI and FBI (all 5 - GPM-only subsets pulled from this)
-# =============================================================================
-csi_cols, fbi_cols = {}, {}
+# CSI is not in the parquet, derived from POD and FAR: CSI = 1 / (1/POD + 1/(1-FAR) - 1)
 for code in PLOT_ORDER:
-    sr = 1 - joined[f'far_{code}']
-    pod = joined[f'pod_{code}']
+    pod, far = metrics_df[f'pod_{code}'], metrics_df[f'far_{code}']
     with np.errstate(divide='ignore', invalid='ignore'):
-        csi_cols[code] = 1.0 / (1.0 / pod + 1.0 / sr - 1.0)
-    fbi_cols[code] = joined[f'fbi_{code}']
+        metrics_df[f'csi_{code}'] = 1 / (1 / pod + 1 / (1 - far) - 1)
 
-csi_df = pd.DataFrame(csi_cols)
-csi_df['UH_NAME'] = joined['UH_NAME'].values
-fbi_df = pd.DataFrame(fbi_cols)
-fbi_df['UH_NAME'] = joined['UH_NAME'].values
-
-csi_by_uh = csi_df.groupby('UH_NAME').mean()
-fbi_by_uh = fbi_df.groupby('UH_NAME').mean()
-station_counts = joined.groupby('UH_NAME').size()
-
-# Per-station CSI/FBI for texture on the maps (all 5 - subset per row later)
-station_csi_cols = {}
-for code in PLOT_ORDER:
-    sr = 1 - gdf[f'far_{code}']
-    pod = gdf[f'pod_{code}']
-    with np.errstate(divide='ignore', invalid='ignore'):
-        station_csi_cols[code] = 1.0 / (1.0 / pod + 1.0 / sr - 1.0)
-station_csi_df = pd.DataFrame(station_csi_cols, index=gdf.index)
-
-uh_all_web = uh.to_crs(epsg=3857)
-stations_web = gdf.to_crs(epsg=3857)
-station_points_list = list(stations_web.geometry.values)
+# Subbasins: level-5 name, level-4 where level 5 is missing (Mantaro, Pachitea)
+# Same lon/lat as the stations; set_crs instead of to_crs avoids a PROJ database error in pytj_313
+uhs = gpd.read_file(uhsFN).set_crs(metrics_df.crs, allow_override=True)
+uhs['basin'] = uhs['NOMB_UH_N5'].fillna(uhs['NOMB_UH_N4'])
+stations = metrics_df.sjoin(uhs[['basin', 'geometry']], how='left', predicate='within')
 
 
-def build_summary(product_codes):
-    """Winner (by CSI) and that winner's FBI, per UH AND per station,
-    restricted to `product_codes`."""
-    sub_csi_by_uh = csi_by_uh[product_codes]
-    winner_by_uh = sub_csi_by_uh.idxmax(axis=1)
-    winner_fbi = pd.Series({u: fbi_by_uh.loc[u, winner_by_uh[u]] for u in winner_by_uh.index})
-    summary = pd.DataFrame({
-        'n_stations': station_counts,
-        'winner': winner_by_uh.map(DISPLAY_NAMES),
-        'winner_csi': sub_csi_by_uh.max(axis=1),
-        'winner_fbi': winner_fbi,
-    })
+# --------------
+# Helpers
+# --------------
 
-    sub_station_csi = station_csi_df[product_codes]
-    station_winner = sub_station_csi.idxmax(axis=1)
-    station_winner_fbi = pd.Series(
-        [gdf.loc[i, f'fbi_{station_winner.loc[i]}'] for i in gdf.index], index=gdf.index)
-    return summary, station_winner, station_winner_fbi
+def basin_summary(codes):
+    """Winner by CSI (highest) and the FBI of that winner, per station and per subbasin.
+    Per subbasin (as in Jhon's original): the product with the highest mean CSI over the subbasin's
+    stations, and that product's mean FBI over the same stations."""
+    st = stations[['basin', 'geometry']].copy()
+    csi_df = stations[[f'csi_{c}' for c in codes]].set_axis(codes, axis=1)
+    st['winner'] = csi_df.idxmax(axis=1)
+    fbi_df = stations[[f'fbi_{c}' for c in codes]].set_axis(codes, axis=1)
+    st['err'] = fbi_df.to_numpy()[np.arange(len(st)), [codes.index(w) for w in st['winner']]]
 
-
-def draw_maps(fig, gs_csi, gs_fbi, product_codes, summary, station_winner, station_winner_fbi,
-             bias_bins, bias_labels, title_csi, title_fbi):
-    n_classes = len(bias_bins) - 1
-    uh_plot = uh.merge(summary, left_on='UH_NAME', right_index=True, how='inner')
-    uh_plot_web = uh_plot.to_crs(epsg=3857)
-    uh_no_data_web = uh_all_web[~uh_all_web['UH_NAME'].isin(uh_plot_web['UH_NAME'])]
-    sw = stations_web.copy()
-    sw['station_winner'] = station_winner.values
-    sw['station_winner_fbi'] = station_winner_fbi.values
-
-    # --- CSI winner map ---
-    ax = fig.add_subplot(gs_csi)
-    uh_all_web.boundary.plot(ax=ax, color='gray', linewidth=0.8, zorder=1)
-    if len(uh_no_data_web) > 0:
-        uh_no_data_web.plot(ax=ax, facecolor='none', edgecolor='gray', hatch='///', linewidth=0.8, alpha=0.6, zorder=1)
-    for code in product_codes:
-        mask = uh_plot_web['winner'] == DISPLAY_NAMES[code]
-        if mask.any():
-            uh_plot_web[mask].plot(ax=ax, color=PRODUCT_COLORS[code], alpha=0.35, edgecolor='black', linewidth=0.8, zorder=2)
-    for code in product_codes:
-        mask = sw['station_winner'] == code
-        sub = sw[mask]
-        if len(sub) > 0:
-            ax.scatter(sub.geometry.x, sub.geometry.y, color=PRODUCT_COLORS[code], marker=PRODUCT_MARKERS[code],
-                      s=60, edgecolor='black', linewidth=0.5, zorder=5)
-    place_all_labels(ax, uh_plot_web, station_points_list, lambda row: row['UH_NAME'], fontsize=11)
-
-    # Reserve the SAME colorbar-sized strip as the FBI panel below, but leave
-    # it invisible - done BEFORE add_basemap (same order as the FBI panel),
-    # since contextily fetches tiles based on the axes' pixel size at call
-    # time; doing this step at different points in each panel was producing
-    # different effective zoom/extent between panels, not just a size illusion.
-    divider_csi = make_axes_locatable(ax)
-    cax_csi = divider_csi.append_axes('right', size='4%', pad=0.15)
-    cax_csi.axis('off')
-
-    if HAVE_CONTEXTILY:
-        try:
-            cx.add_basemap(ax, source=cx.providers.CartoDB.Positron, zoom=8)
-        except Exception:
-            pass
-    if SHOW_COORD_BOX:
-        apply_coord_box(ax)
-    else:
-        ax.set_axis_off()
-    ax.set_title(title_csi, fontsize=16)
-    handles = [mpatches.Patch(color=PRODUCT_COLORS[c], label=DISPLAY_NAMES[c], alpha=0.6) for c in product_codes]
-    handles.append(mpatches.Patch(facecolor='none', edgecolor='gray', hatch='///', label='No station coverage'))
-    ax.legend(handles=handles, loc='lower left', frameon=True, framealpha=0.9, fontsize=12, title='CSI winner', title_fontsize=12)
-
-    # --- FBI map (discrete classes) ---
-    ax = fig.add_subplot(gs_fbi)
-    uh_all_web.boundary.plot(ax=ax, color='gray', linewidth=0.8, zorder=1)
-    if len(uh_no_data_web) > 0:
-        uh_no_data_web.plot(ax=ax, facecolor='none', edgecolor='gray', hatch='///', linewidth=0.8, alpha=0.6, zorder=1)
-    cmap = plt.colormaps['RdBu_r'].resampled(n_classes + 2)
-    class_norm = mcolors.BoundaryNorm(bias_bins, cmap.N, extend='both')
-    uh_plot_web.plot(ax=ax, column='winner_fbi', cmap=cmap, norm=class_norm, edgecolor='black', linewidth=0.8, zorder=2)
-    for code in product_codes:
-        mask = sw['station_winner'] == code
-        sub = sw[mask]
-        if len(sub) > 0:
-            ax.scatter(sub.geometry.x, sub.geometry.y, c=sub['station_winner_fbi'], cmap=cmap, norm=class_norm,
-                      marker=PRODUCT_MARKERS[code], s=90, edgecolor='black', linewidth=0.8, zorder=5)
-    place_all_labels(ax, uh_plot_web, station_points_list,
-                    lambda row: f"{row['UH_NAME']}\nFBI={row['winner_fbi']:.2f}", fontsize=10)
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=class_norm)
-    sm.set_array([])
-    bin_centers = [(bias_bins[i] + bias_bins[i + 1]) / 2 for i in range(n_classes)]
-    divider_fbi = make_axes_locatable(ax)
-    cax_fbi = divider_fbi.append_axes('right', size='4%', pad=0.15)
-    cbar = fig.colorbar(sm, cax=cax_fbi, extend='both')
-    cbar.set_ticks(bin_centers)
-    cbar.set_ticklabels(bias_labels, fontsize=9)
-    cbar.set_label('FBI class', fontsize=11)
-    if HAVE_CONTEXTILY:
-        try:
-            cx.add_basemap(ax, source=cx.providers.CartoDB.Positron, zoom=8)
-        except Exception:
-            pass
-    if SHOW_COORD_BOX:
-        apply_coord_box(ax)
-    else:
-        ax.set_axis_off()
-    ax.set_title(title_fbi, fontsize=16)
-    shape_handles = [plt.Line2D([0], [0], marker=PRODUCT_MARKERS[c], color='w', markerfacecolor='lightgray',
-                    markeredgecolor='black', markersize=9, label=DISPLAY_NAMES[c]) for c in product_codes]
-    shape_handles.append(mpatches.Patch(facecolor='none', edgecolor='gray', hatch='///', label='No station coverage'))
-    ax.legend(handles=shape_handles, loc='lower left', frameon=True, framealpha=0.9, fontsize=12, title='Station winner (shape)', title_fontsize=12)
+    covered = st['basin'].dropna()
+    basin_winner = csi_df.loc[covered.index].groupby(covered).mean().idxmax(axis=1)
+    fbi_by_basin = fbi_df.loc[covered.index].groupby(covered).mean()
+    basin_err = pd.Series({b: fbi_by_basin.loc[b, code] for b, code in basin_winner.items()})
+    return st, basin_winner, basin_err
 
 
-# =============================================================================
-# 3. Build data for both rows
-# =============================================================================
-summary_full, station_winner_full, station_winner_fbi_full = build_summary(PLOT_ORDER)
-print("--- Full comparison (5 products): per-UH winner and FBI ---")
-print(summary_full.round(3).to_string())
+def draw_basins(ax, facecolors):
+    """Fill subbasins from {basin: color}; subbasins without stations are hatched."""
+    has = uhs['basin'].isin(facecolors.keys())
+    uhs[has].plot(ax=ax, color=[facecolors[b] for b in uhs.loc[has, 'basin']], edgecolor='black', linewidth=0.8)
+    uhs[~has].plot(ax=ax, facecolor='white', edgecolor='grey', hatch='////', linewidth=0.8)
+    uhs.boundary.plot(ax=ax, color='black', linewidth=0.8)
 
-summary_gpm, station_winner_gpm, station_winner_fbi_gpm = build_summary(GPM_FAMILY)
-print("\n--- GPM-family-only: per-UH winner and FBI ---")
-print(summary_gpm.round(3).to_string())
-print(f"\nGPM-family winner_fbi range: {summary_gpm['winner_fbi'].min():.3f} to "
-      f"{summary_gpm['winner_fbi'].max():.3f} -> check bias_bins_gpm below matches this")
-print(f"GPM-family station-level winner FBI range: {station_winner_fbi_gpm.min():.3f} to "
-      f"{station_winner_fbi_gpm.max():.3f}")
 
-# =============================================================================
-# 4. Bias bins - TOP row (full comparison) vs BOTTOM row (GPM family) use
-#    DIFFERENT ranges, since their FBI values sit in different parts of the
-#    scale. Adjust bias_bins_gpm based on the printed ranges above.
-# =============================================================================
-bias_bins_full = [0.5, 0.75, 0.88, 0.94, 1.00, 1.06, 1.15, 1.5]
-bias_labels_full = ['0.50-0.75\nStrong under', '0.75-0.88', '0.88-0.94', '0.94-1.00\nNear balanced',
-                    '1.00-1.06', '1.06-1.15', '1.15-1.50\nStrong over']
+def draw_stations(ax, st, codes, by_error=False):
+    """Marker shape = winning product; color = product color, or FBI class if `by_error`."""
+    for code in codes:
+        sub = st[st['winner'] == code]
+        if sub.empty:
+            continue
+        color = FBI_CMAP(FBI_NORM(sub['err'])) if by_error else PRODUCT_COLORS[code]
+        ax.scatter(sub.geometry.x, sub.geometry.y, marker=PRODUCT_MARKERS[code], c=color,
+                   s=45, edgecolors='black', linewidths=0.6, zorder=5)
 
-bias_bins_gpm = [0.4, 0.6, 0.72, 0.8, 0.88, 0.96, 1.1, 1.6]
-bias_labels_gpm = ['0.40-0.60\nStrong under', '0.60-0.72', '0.72-0.80', '0.80-0.88\nNear balanced',
-                   '0.88-0.96', '0.96-1.10', '1.10-1.60\nStrong over']
 
-# =============================================================================
-# 5. Combined figure: 1 row x 4 cols of MAPS (full comparison, then GPM family)
-# =============================================================================
-fig = plt.figure(figsize=(34, 11))
-gs = fig.add_gridspec(1, 4, wspace=0.15)
+def label_basins(ax, texts):
+    for _, row in uhs[uhs['basin'].isin(texts.keys())].iterrows():
+        pt = row.geometry.representative_point()
+        ax.annotate(texts[row['basin']], (pt.x, pt.y), xytext=LABEL_POS[row['basin']],
+                    textcoords='axes fraction', ha='center', va='center',
+                    fontsize=map_fontsize, fontweight='bold', zorder=6, annotation_clip=False,
+                    bbox={'boxstyle': 'round,pad=0.2', 'facecolor': 'white', 'edgecolor': 'grey', 'alpha': 0.85},
+                    arrowprops={'arrowstyle': '-', 'color': 'black', 'linewidth': 0.7, 'shrinkA': 0, 'shrinkB': 0})
+        ax.plot(pt.x, pt.y, marker='o', markersize=3, color='black', zorder=6)
 
-draw_maps(fig, gs[0, 0], gs[0, 1], PLOT_ORDER, summary_full, station_winner_full, station_winner_fbi_full,
-         bias_bins_full, bias_labels_full,
-         '(a) Best-performing product by CSI - full comparison',
-         '(b) FBI of the CSI-winning product - full comparison')
 
-draw_maps(fig, gs[0, 2], gs[0, 3], GPM_FAMILY, summary_gpm, station_winner_gpm, station_winner_fbi_gpm,
-         bias_bins_gpm, bias_labels_gpm,
-         '(c) Best-performing product by CSI - GPM family only',
-         '(d) FBI of the CSI-winning product - GPM family only')
+def winner_handles(codes, filled, coverage):
+    """Legend handles: one marker per product, plus the hatched no-coverage patch if `coverage`."""
+    return [Line2D([], [], marker=PRODUCT_MARKERS[code], linestyle='none', markersize=8,
+                   markerfacecolor=PRODUCT_COLORS[code] if filled else 'white',
+                   markeredgecolor='black', label=DISPLAY_NAMES[code])
+            for code in codes] + ([no_coverage_patch] if coverage else [])
 
-fig.suptitle('CSI winner and FBI: full comparison (left) vs. GPM family only (right)', fontsize=21, y=1.03)
 
-out_path = os.path.join(out_dir, 'combined_uh_maps_full_and_gpm.png')
-plt.savefig(out_path, dpi=300, bbox_inches='tight')
-plt.show()
-print(f"\nSaved {out_path}")
+def add_north_arrow_and_scale(ax, x=0.75, y=0.80, length_km=100):
+    """QGIS-style north arrow (half black / half white) above a scale bar, both centered on
+    (x, y) in axes fraction."""
+    # Arrow drawn in inches from its base point, so its shape is independent of the map aspect
+    trans = ax.figure.dpi_scale_trans + mtransforms.ScaledTranslation(x, y + 0.01, ax.transAxes)
+    h, w, notch = 0.5, 0.15, 0.12
+    tip, left, mid, right = (0, h), (-w, 0), (0, notch), (w, 0)
+    ax.add_patch(mpatches.Polygon([tip, left, mid], closed=True, facecolor='black', edgecolor='black',
+                                  linewidth=1, transform=trans, zorder=7))
+    ax.add_patch(mpatches.Polygon([tip, mid, right], closed=True, facecolor='white', edgecolor='black',
+                                  linewidth=1, transform=trans, zorder=7))
+    ax.text(0, h + 0.05, 'N', transform=trans, ha='center', va='bottom',
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold', zorder=7)
+
+    # Data is in lon/lat: convert km to degrees of longitude at the map's mid-latitude
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    dx = length_km / (111.32 * np.cos(np.radians((y0 + y1) / 2)))
+    xc = x0 + x * (x1 - x0)
+    ys = y0 + (y - 0.05) * (y1 - y0)
+    ax.plot([xc - dx / 2, xc + dx / 2], [ys, ys], color='black', linewidth=3, solid_capstyle='butt')
+    ax.text(xc, ys + 0.01 * (y1 - y0), f'{length_km} km', ha='center', va='bottom',
+            fontsize=map_fontsize)
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+
+
+# --------------
+# Figure 7 -> 1x4 winner maps: (a, b) all products, (c, d) GPM-based products only
+# --------------
+
+fig, axs = plt.subplots(1, 4, figsize=(22, 8))
+
+for pair, codes in enumerate([PLOT_ORDER, GPM_FAMILY]):
+    st, basin_winner, basin_err = basin_summary(codes)
+    basin_err = basin_err.dropna()
+    ax_w, ax_e = axs[2 * pair], axs[2 * pair + 1]
+
+    # Winner panel: subbasin tinted by its winning product, stations by winning product
+    draw_basins(ax_w, {b: mcolors.to_rgba(PRODUCT_COLORS[code], 0.35) for b, code in basin_winner.items()})
+    draw_stations(ax_w, st, codes)
+    label_basins(ax_w, {b: b for b in basin_winner.index})
+    ax_w.legend(handles=winner_handles(codes, filled=True, coverage=True), title='Dataset with best CSI',
+                loc='lower left', frameon=True, framealpha=0.9)
+
+    # FBI panel: subbasin and stations colored by FBI class of the winner
+    draw_basins(ax_e, {b: mcolors.to_rgba(FBI_CMAP(FBI_NORM(v)), ERROR_FILL_ALPHA) for b, v in basin_err.items()})
+    draw_stations(ax_e, st, codes, by_error=True)
+    label_basins(ax_e, {b: f'{b}\nFBI={v:.2f}' for b, v in basin_err.items()})
+    ax_e.legend(handles=winner_handles(codes, filled=False, coverage=False), title='Best dataset on station (shape)',
+                loc='lower left', frameon=True, framealpha=0.9)
+
+    cax = ax_e.inset_axes([1.0, 0.3, 0.035, 0.45])
+    cbar = fig.colorbar(ScalarMappable(norm=FBI_NORM, cmap=FBI_CMAP), cax=cax, extend='both')
+    cbar.set_ticks(FBI_BOUNDS)
+    cbar.set_label('FBI')
+
+for i, ax in enumerate(axs):
+    ax.set_axis_off()
+    add_north_arrow_and_scale(ax)
+    ax.text(0.0, 1.0, panel_labels[i], transform=ax.transAxes, va='top',
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold')
+
+fig.tight_layout(w_pad=4)     # extra horizontal space between panels
+fig.savefig(plotDir / 'fig7_winner_csi_fbi.png', bbox_inches='tight')
+plt.close(fig)

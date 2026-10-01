@@ -1,38 +1,76 @@
-# -*- coding: utf-8 -*-
 """
-Detection-metric companion to figure8_elevation_scatter.py: CSI (a), FBI (b),
-FAR (c), POD (d) vs. elevation, all 5 products, same treatment - station-
-level scatter (no binning), LOESS trend per product, Spearman rho printed
-and interpreted in the terminal, elevation distribution blended into the
-same figure as a top strip.
+File: fig_9_elevation.py
+Author: Jose P. Teran
+Github: jopator
+Date: 2026-10-02
+Description: Categorical (detection) statistics vs station elevation
+             Figure 9 of manuscript: (a) CSI, (b) FBI, (c) FAR, (d) POD vs elevation
+             Points = individual stations, lines = LOESS trend per product,
+             boxed values = Spearman rho (* = p < 0.05).
+             CSI is derived from POD and FAR.
+"""
 
-CSI is derived from POD/FAR (same formula used throughout this project);
-FBI, FAR, and POD are already stored GeoParquet columns.
-"""
+
 import os
-import numpy as np
-import pandas as pd
+from pathlib import Path
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+import numpy as np
+from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS
+from matplotlib.lines import Line2D
 from scipy.stats import spearmanr
 
-from configurations import PLOT_ORDER, DISPLAY_NAMES, PRODUCT_COLORS
+repoDir = Path(__file__).resolve().parents[1]
 
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-geoparquet_path = os.path.join(wkDir, 'outputs', 'station_metrics_1mm_clipped.parquet')
-out_dir = os.path.join(wkDir, 'graphs')
-os.makedirs(out_dir, exist_ok=True)
+# Dirs
+metrics_parquetFN   = repoDir / 'outputs/station_metrics_1mm_clipped.parquet'        # parquet with metrics
+plotDir             = repoDir / 'graphs'
+os.makedirs(plotDir, exist_ok=True)
 
+# --------------
+# Plot settings
+# --------------
+
+plt.rcParams.update({
+    'xtick.labelsize':  10,     # axis tick labels
+    'ytick.labelsize':  10,
+    'legend.fontsize':  10,
+    'axes.labelsize':   12,     # axis labels
+    'axes.titlesize':   14,     # subplot titles
+    'figure.titlesize': 14,     # suptitle
+    'savefig.dpi':      300,
+})
+
+# (column metric, axis label, reference line)
+panel_specs = [
+    ('csi', 'CSI', None),
+    ('fbi', 'FBI', 1.0),      # unbiased
+    ('far', 'FAR', None),
+    ('pod', 'POD', None),
+]
+panel_labels = ['(a)', '(b)', '(c)', '(d)']
+RHO_STRIP = 0.12    # small x-axis extension (fraction of the range) giving the Spearman box some room
+# Candidate corners for the Spearman box (axes fraction x, y, ha, va), in order of preference
+RHO_CORNERS = [(0.98, 0.97, 'right', 'top'), (0.98, 0.03, 'right', 'bottom'),
+               (0.02, 0.97, 'left', 'top'), (0.02, 0.03, 'left', 'bottom')]
+
+
+# --------------
+# Helpers
+# --------------
 
 def simple_lowess(x, y, frac=0.6, n_points=100):
-    """Minimal LOWESS using only numpy (no statsmodels dependency)."""
+    """Minimal LOWESS using only numpy (no statsmodels dependency). Tricube-
+    weighted local linear fit evaluated at n_points across the data range."""
     order = np.argsort(x)
     x_sorted, y_sorted = x[order], y[order]
     n = len(x_sorted)
     k = max(int(np.ceil(frac * n)), 2)
+
     x_eval = np.linspace(x_sorted.min(), x_sorted.max(), n_points)
     y_eval = np.empty(n_points)
+
     for i, x0 in enumerate(x_eval):
         dist = np.abs(x_sorted - x0)
         idx = np.argsort(dist)[:k]
@@ -49,103 +87,82 @@ def simple_lowess(x, y, frac=0.6, n_points=100):
     return x_eval, y_eval
 
 
-def interpret_rho(rho, pval):
-    strength = 'weak' if abs(rho) < 0.3 else ('moderate' if abs(rho) < 0.5 else 'strong')
-    sig = 'statistically significant (p<0.05)' if pval < 0.05 else 'NOT statistically significant'
-    direction = 'increases' if rho > 0 else 'decreases'
-    return strength, sig, direction
-
-
-gdf = gpd.read_parquet(geoparquet_path)
-
-# --- Derive CSI per product (POD/FAR already stored) ---
-csi_cols = {}
-for code in PLOT_ORDER:
-    sr = 1 - gdf[f'far_{code}']
-    pod = gdf[f'pod_{code}']
-    with np.errstate(divide='ignore', invalid='ignore'):
-        csi_cols[code] = 1.0 / (1.0 / pod + 1.0 / sr - 1.0)
-csi_df = pd.DataFrame(csi_cols, index=gdf.index)
-
-print("="*90)
-print("REMINDER: LOESS = local smoothed trend (no shape assumed); Spearman rho")
-print("= rank-based monotonic correlation, -1 to +1. |rho|<0.3 weak, 0.3-0.5")
-print("moderate, >0.5 strong. '*' = statistically significant (p<0.05, n=70).")
-print("(see figure8_elevation_scatter.py for the fuller explanation)")
-print("="*90)
-
-# =============================================================================
-# Combined figure: TOP = elevation distribution, BOTTOM 2x2 = CSI/FBI/FAR/POD
-# =============================================================================
-fig = plt.figure(figsize=(17, 18))
-gs = gridspec.GridSpec(3, 2, height_ratios=[0.5, 1, 1], hspace=0.35, wspace=0.22, figure=fig)
-
-ax_hist = fig.add_subplot(gs[0, :])
-ax_hist.hist(gdf['alt'], bins=20, color='steelblue', edgecolor='black', alpha=0.75)
-ax_hist.set_xlabel('Elevation (m)', fontsize=13)
-ax_hist.set_ylabel('Number of\nstations', fontsize=13)
-ax_hist.set_title('Station elevation distribution (n=70)', fontsize=15, loc='left')
-ax_hist.tick_params(labelsize=11)
-ax_hist.grid(axis='y', alpha=0.3)
-
-panel_specs = [('CSI', gs[1, 0], 'a', None),
-              ('FBI', gs[1, 1], 'b', 1.0),
-              ('FAR', gs[2, 0], 'c', None),
-              ('POD', gs[2, 1], 'd', None)]
-
-print("\n" + "="*90)
-print("PER-PRODUCT TREND STRENGTH AND SIGNIFICANCE, BY DETECTION METRIC")
-print("="*90)
-
-for metric_label, gs_pos, panel_letter, ref_line in panel_specs:
-    ax = fig.add_subplot(gs_pos)
-    rho_text_lines = []
-    print(f"\n--- {metric_label} vs elevation ---")
-    for code in PLOT_ORDER:
-        x = gdf['alt'].values
-        if metric_label == 'CSI':
-            y = csi_df[code].values
+def place_rho_box(ax, text, xy):
+    """Spearman box in the axes corner covering the fewest data points / LOESS samples (`xy`, data coords)."""
+    renderer = ax.figure.canvas.get_renderer()
+    pts = ax.transData.transform(xy)
+    best = None
+    for x, y, ha, va in RHO_CORNERS:
+        t = ax.text(x, y, text, transform=ax.transAxes, ha=ha, va=va, multialignment='right',
+                    fontsize=plt.rcParams['legend.fontsize'],
+                    bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'white', 'alpha': 0.8,
+                          'edgecolor': 'lightgray', 'linewidth': 0.6})
+        n_covered = t.get_window_extent(renderer).expanded(1.1, 1.15).count_contains(pts)
+        if best is None or n_covered < best[0]:
+            if best is not None:
+                best[1].remove()
+            best = (n_covered, t)
         else:
-            y = gdf[f'{metric_label.lower()}_{code}'].values
-        mask = ~np.isnan(x) & ~np.isnan(y)
+            t.remove()
+
+
+# --------------
+# Load data
+# --------------
+
+metrics_df = gpd.read_parquet(metrics_parquetFN)
+
+# CSI is not in the parquet, derived from POD and FAR: CSI = 1 / (1/POD + 1/(1-FAR) - 1)
+for code in PLOT_ORDER:
+    pod, far = metrics_df[f'pod_{code}'], metrics_df[f'far_{code}']
+    with np.errstate(divide='ignore', invalid='ignore'):
+        metrics_df[f'csi_{code}'] = 1 / (1 / pod + 1 / (1 - far) - 1)
+
+# --------------
+# Figure 9 -> 2x2 metrics vs elevation
+# --------------
+
+fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+rho_boxes = []
+
+for i, (ax, (metric, ylabel, ref_line)) in enumerate(zip(axs.ravel(), panel_specs)):
+    rho_lines, xy = [], []
+    for code in PLOT_ORDER:
+        x = metrics_df['alt'].to_numpy()
+        y = metrics_df[f'{metric}_{code}'].to_numpy()
+        mask = np.isfinite(x) & np.isfinite(y)
         x_valid, y_valid = x[mask], y[mask]
 
-        ax.scatter(x_valid, y_valid, color=PRODUCT_COLORS[code], alpha=0.45, s=35,
-                  edgecolor='none', label=DISPLAY_NAMES[code])
-
-        smoothed_x, smoothed_y = simple_lowess(x_valid, y_valid, frac=0.6)
-        ax.plot(smoothed_x, smoothed_y, color=PRODUCT_COLORS[code], linewidth=2.5)
+        ax.scatter(x_valid, y_valid, color=PRODUCT_COLORS[code], alpha=0.45, s=25,
+                   edgecolor='none', label=DISPLAY_NAMES[code])
+        x_lo, y_lo = simple_lowess(x_valid, y_valid, frac=0.6)
+        ax.plot(x_lo, y_lo, color=PRODUCT_COLORS[code], linewidth=2)
+        xy += [np.column_stack([x_valid, y_valid]), np.column_stack([x_lo, y_lo])]
 
         rho, pval = spearmanr(x_valid, y_valid)
-        sig = '*' if pval < 0.05 else ''
-        rho_text_lines.append(f"{DISPLAY_NAMES[code]}: \u03c1={rho:+.2f}{sig}")
-
-        strength, sig_text, direction = interpret_rho(rho, pval)
-        print(f"  {DISPLAY_NAMES[code]:12s} rho={rho:+.3f}  {strength:8s}  "
-              f"metric {direction} with elevation  -  {sig_text}")
+        rho_lines.append(f"{DISPLAY_NAMES[code]}: ρ={rho:+.2f}{'*' if pval < 0.05 else ''}")
 
     if ref_line is not None:
         ax.axhline(ref_line, color='black', linestyle='--', linewidth=1, alpha=0.6)
 
-    ax.set_xlabel('Elevation (m)', fontsize=14)
-    ax.set_ylabel(metric_label, fontsize=16)
-    ax.set_title(f'({panel_letter}) {metric_label}', fontsize=17, loc='left')
-    ax.tick_params(labelsize=12)
+    ax.set_xlabel('Elevation (m)' if i >= 2 else '')
+    ax.set_ylabel(ylabel)
     ax.grid(alpha=0.3)
+    x0, x1 = ax.get_xlim()
+    ax.set_xlim(x0, x1 + RHO_STRIP * (x1 - x0))
+    ax.text(-0.1, 1.05, panel_labels[i], transform=ax.transAxes,
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold')
+    rho_boxes.append((ax, '\n'.join(rho_lines), np.vstack(xy)))
 
-    rho_box_text = '\n'.join(rho_text_lines)
-    ax.text(0.98, 0.03, rho_box_text, transform=ax.transAxes, fontsize=9,
-           ha='right', va='bottom', family='monospace',
-           bbox=dict(boxstyle='round,pad=0.4', facecolor='white', alpha=0.85, edgecolor='gray'))
+fig.tight_layout()
 
-    if panel_letter == 'a':
-        ax.legend(fontsize=10, title='Product', title_fontsize=11, loc='upper right', framealpha=0.9)
+# Spearman boxes placed after the layout is final, so the overlap check uses the real panel sizes
+for ax, text, xy in rho_boxes:
+    place_rho_box(ax, text, xy)
 
-fig.suptitle('Relationship between elevation and detection performance metrics\n'
-             '(points = individual stations, lines = LOESS trend, boxed values = Spearman \u03c1)',
-             fontsize=19, y=1.01)
-
-out_path = os.path.join(out_dir, 'figure_detection_elevation_scatter.png')
-plt.savefig(out_path, dpi=300, bbox_inches='tight')
-plt.show()
-print(f"\nSaved {out_path}")
+# Shared dataset legend, horizontal below the panels
+handles = [Line2D([], [], color=PRODUCT_COLORS[code], marker='o', linewidth=2, label=DISPLAY_NAMES[code])
+           for code in PLOT_ORDER]
+fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(0.5, 0.0), ncol=len(handles), frameon=False)
+fig.savefig(plotDir / 'fig9_elevation_categorical.png', bbox_inches='tight')
+plt.close(fig)

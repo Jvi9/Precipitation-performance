@@ -1,288 +1,212 @@
-# -*- coding: utf-8 -*-
 """
-Same treatment as combined_uh_maps_full_and_gpm.py (CSI/FBI), applied to the
-CONTINUOUS metrics r and |PBIAS| - the direct analog of "Spatial distribution
-of r (a) and |PBIAS| (b)". r is the pattern/timing-correlation winner; |PBIAS|
-of that SAME winning product shows whether it's also well-calibrated (low
-|PBIAS|) or just good at timing while badly biased in total volume.
-
-|PBIAS| is unsigned (a magnitude, not a ratio centered on 1 like FBI), so this
-uses a SEQUENTIAL colormap with excellent->poor classes, not a diverging one.
-
-4 map panels, 1x4: (a) r-winner full comparison, (b) |PBIAS| of that winner
-full comparison, (c) r-winner GPM family only, (d) |PBIAS| of that winner
-GPM family only.
+File: fig_5_winner_map_stat.py
+Author: Jose P. Teran
+Github: jopator
+Date: 2026-10-02
+Description: Winner maps with subbasin (UH) subdivision - continuous metrics
+             Figure 5 of manuscript, 1x4 panels:
+               (a) dataset with best r per station + dominant winner per subbasin
+               (b) |PBIAS| of the winner (station and subbasin mean)
+               (c), (d) same, restricted to GPM-based products
 """
+
+
 import os
-import math
+from pathlib import Path
+
+import geopandas as gpd
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
-from matplotlib.ticker import MaxNLocator, FuncFormatter
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from shapely.geometry import Point
-try:
-    import contextily as cx
-    HAVE_CONTEXTILY = True
-except ImportError:
-    HAVE_CONTEXTILY = False
+from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS, PRODUCT_MARKERS
+from matplotlib.cm import ScalarMappable
+from matplotlib.lines import Line2D
 
-from configurations import PLOT_ORDER, DISPLAY_NAMES, PRODUCT_COLORS, PRODUCT_MARKERS
+repoDir = Path(__file__).resolve().parents[1]
 
-wkDir = r'C:\Users\jvila\Desktop\Andean_project'
-geoparquet_path = os.path.join(wkDir, 'outputs', 'station_metrics_1mm_clipped.parquet')
-uh_shp_path = r'C:\Users\jvila\Desktop\Andean_project\gis\study_uhs\study_uhs.shp'
-out_dir = os.path.join(wkDir, 'graphs')
-os.makedirs(out_dir, exist_ok=True)
+# Dirs
+metrics_parquetFN   = repoDir / 'outputs/station_metrics_1mm_clipped.parquet'        # parquet with metrics
+uhsFN               = repoDir / 'gis/study_uhs/study_uhs.shp'                        # subbasins (UHs)
+plotDir             = repoDir / 'graphs'
+os.makedirs(plotDir, exist_ok=True)
+
+# --------------
+# Plot settings
+# --------------
+
+plt.rcParams.update({
+    'xtick.labelsize':  10,     # axis tick labels
+    'ytick.labelsize':  10,
+    'legend.fontsize':  10,
+    'axes.labelsize':   12,     # axis labels
+    'axes.titlesize':   14,     # subplot titles
+    'figure.titlesize': 14,     # suptitle
+    'savefig.dpi':      300,
+})
 
 GPM_FAMILY = ['rawGPM', 'gwrGPM', 'expGPM']
+panel_labels = ['(a)', '(b)', '(c)', '(d)']
+map_fontsize = plt.rcParams['legend.fontsize']
 
-# --- Toggle: show a minimal lat/lon coordinate box on each map? ---
-SHOW_COORD_BOX = True
+# |PBIAS| (%) classes, same for both product sets; values above 50 fall in the open '>50' class
+PBIAS_BOUNDS = [0, 5, 10, 20, 35, 50]
+_n_colors = len(PBIAS_BOUNDS)       # 5 classes + 1 'max' extension
+PBIAS_CMAP = mcolors.ListedColormap(plt.get_cmap('YlOrRd')(np.linspace(0.05, 0.95, _n_colors)))
+PBIAS_NORM = mcolors.BoundaryNorm(PBIAS_BOUNDS, _n_colors, extend='max')
 
+ERROR_FILL_ALPHA = 0.8     # subbasin fill transparency on the |PBIAS| panels
 
-def _webmerc_to_lon(x, pos=None):
-    return f"{x / 20037508.34 * 180:.2f}\u00b0"
+# Subbasin label positions (axes fraction), placed outside the subbasins with a leader line
+LABEL_POS = {
+    'Alto Marañón IV': (0.56, 0.96),
+    'Crisnejas':       (0.06, 0.67),
+    'Alto Marañón V':  (0.10, 0.55),
+    'Alto Huallaga':   (0.20, 0.43),
+    'Pachitea':        (0.68, 0.68),
+    'Perené':          (0.28, 0.34),
+    'Mantaro':         (1.00, 0.12),     # right of the basin, clear of the legend and below the colorbar
+}
 
-def _webmerc_to_lat(y, pos=None):
-    lat = math.degrees(2 * math.atan(math.exp(y / 20037508.34 * math.pi)) - math.pi / 2)
-    return f"{lat:.2f}\u00b0"
+no_coverage_patch = mpatches.Patch(facecolor='white', edgecolor='grey', hatch='////', label='No station coverage')
 
-def apply_coord_box(ax):
-    ax.set_axis_on()
-    ax.xaxis.set_major_locator(MaxNLocator(4))
-    ax.yaxis.set_major_locator(MaxNLocator(4))
-    ax.xaxis.set_major_formatter(FuncFormatter(_webmerc_to_lon))
-    ax.yaxis.set_major_formatter(FuncFormatter(_webmerc_to_lat))
-    ax.tick_params(axis='both', labelsize=9, length=3, colors='dimgray')
-    for spine in ['top', 'right']:
-        ax.spines[spine].set_visible(False)
-    for spine in ['bottom', 'left']:
-        ax.spines[spine].set_color('dimgray')
-        ax.spines[spine].set_linewidth(0.6)
+# --------------
+# Load data
+# --------------
 
+metrics_df = gpd.read_parquet(metrics_parquetFN)
 
-def find_label_position(polygon, clutter_points, grid_n=40):
-    minx, miny, maxx, maxy = polygon.bounds
-    xs = np.linspace(minx, maxx, grid_n)
-    ys = np.linspace(miny, maxy, grid_n)
-    best_point, best_dist = None, -1
-    for x in xs:
-        for y in ys:
-            pt = Point(x, y)
-            if polygon.contains(pt):
-                d = min((pt.distance(cp) for cp in clutter_points), default=0)
-                if d > best_dist:
-                    best_dist, best_point = d, pt
-    return best_point if best_point is not None else polygon.representative_point()
+# Subbasins: level-5 name, level-4 where level 5 is missing (Mantaro, Pachitea)
+# Same lon/lat as the stations; set_crs instead of to_crs avoids a PROJ database error in pytj_313
+uhs = gpd.read_file(uhsFN).set_crs(metrics_df.crs, allow_override=True)
+uhs['basin'] = uhs['NOMB_UH_N5'].fillna(uhs['NOMB_UH_N4'])
+stations = metrics_df.sjoin(uhs[['basin', 'geometry']], how='left', predicate='within')
 
 
-def place_all_labels(ax, uh_plot_web, clutter_points, text_fn, fontsize=11):
-    placed_points = []
-    for _, row in uh_plot_web.iterrows():
-        avoid = clutter_points + placed_points
-        label_pt = find_label_position(row.geometry, avoid)
-        placed_points.append(label_pt)
-        ax.annotate(text_fn(row), xy=(label_pt.x, label_pt.y), ha='center', va='center',
-                   fontsize=fontsize, fontweight='bold',
-                   bbox=dict(boxstyle='round,pad=0.25', facecolor='white', alpha=0.85, edgecolor='gray'))
+# --------------
+# Helpers
+# --------------
+
+def basin_summary(codes):
+    """Winner by r (highest) and the |PBIAS| of that winner, per station and per subbasin.
+    Per subbasin (as in Jhon's original): the product with the highest mean r over the subbasin's
+    stations, and that product's mean |PBIAS| over the same stations."""
+    st = stations[['basin', 'geometry']].copy()
+    r_df = stations[[f'r_{c}' for c in codes]].set_axis(codes, axis=1)
+    st['winner'] = r_df.idxmax(axis=1)
+    pbias_df = stations[[f'pbias_{c}' for c in codes]].abs().set_axis(codes, axis=1)
+    st['err'] = pbias_df.to_numpy()[np.arange(len(st)), [codes.index(w) for w in st['winner']]]
+
+    covered = st['basin'].dropna()
+    basin_winner = r_df.loc[covered.index].groupby(covered).mean().idxmax(axis=1)
+    pbias_by_basin = pbias_df.loc[covered.index].groupby(covered).mean()
+    basin_err = pd.Series({b: pbias_by_basin.loc[b, code] for b, code in basin_winner.items()})
+    return st, basin_winner, basin_err
 
 
-# =============================================================================
-# 1. Load UH polygons, resolve N5-preferred/N4-fallback name; join stations
-# =============================================================================
-uh = gpd.read_file(uh_shp_path)
-for col in ['NOMB_UH_N5', 'NOMB_UH_N4']:
-    uh[col] = uh[col].replace('', np.nan)
-uh['UH_NAME'] = uh['NOMB_UH_N5'].fillna(uh['NOMB_UH_N4'])
-
-gdf = gpd.read_parquet(geoparquet_path)
-gdf_uh_crs = gdf.to_crs(uh.crs)
-joined = gpd.sjoin(gdf_uh_crs, uh[['UH_NAME', 'geometry']], how='left', predicate='within')
-
-# =============================================================================
-# 2. Per-UH, per-product r and |PBIAS|
-# =============================================================================
-r_cols, abs_pbias_cols = {}, {}
-for code in PLOT_ORDER:
-    r_cols[code] = joined[f'r_{code}']
-    abs_pbias_cols[code] = joined[f'pbias_{code}'].abs()
-
-r_df = pd.DataFrame(r_cols)
-r_df['UH_NAME'] = joined['UH_NAME'].values
-abs_pbias_df = pd.DataFrame(abs_pbias_cols)
-abs_pbias_df['UH_NAME'] = joined['UH_NAME'].values
-
-r_by_uh = r_df.groupby('UH_NAME').mean()
-abs_pbias_by_uh = abs_pbias_df.groupby('UH_NAME').mean()
-station_counts = joined.groupby('UH_NAME').size()
-
-# Per-station r/|PBIAS| for texture on the maps
-station_r_df = pd.DataFrame({code: gdf[f'r_{code}'] for code in PLOT_ORDER}, index=gdf.index)
-station_abs_pbias_df = pd.DataFrame({code: gdf[f'pbias_{code}'].abs() for code in PLOT_ORDER}, index=gdf.index)
-
-uh_all_web = uh.to_crs(epsg=3857)
-stations_web = gdf.to_crs(epsg=3857)
-station_points_list = list(stations_web.geometry.values)
+def draw_basins(ax, facecolors):
+    """Fill subbasins from {basin: color}; subbasins without stations are hatched."""
+    has = uhs['basin'].isin(facecolors.keys())
+    uhs[has].plot(ax=ax, color=[facecolors[b] for b in uhs.loc[has, 'basin']], edgecolor='black', linewidth=0.8)
+    uhs[~has].plot(ax=ax, facecolor='white', edgecolor='grey', hatch='////', linewidth=0.8)
+    uhs.boundary.plot(ax=ax, color='black', linewidth=0.8)
 
 
-def build_summary(product_codes):
-    """Winner (by r) and that winner's |PBIAS|, per UH AND per station,
-    restricted to `product_codes`."""
-    sub_r_by_uh = r_by_uh[product_codes]
-    winner_by_uh = sub_r_by_uh.idxmax(axis=1)
-    winner_abs_pbias = pd.Series({u: abs_pbias_by_uh.loc[u, winner_by_uh[u]] for u in winner_by_uh.index})
-    summary = pd.DataFrame({
-        'n_stations': station_counts,
-        'winner': winner_by_uh.map(DISPLAY_NAMES),
-        'winner_r': sub_r_by_uh.max(axis=1),
-        'winner_abs_pbias': winner_abs_pbias,
-    })
-
-    sub_station_r = station_r_df[product_codes]
-    station_winner = sub_station_r.idxmax(axis=1)
-    station_winner_abs_pbias = pd.Series(
-        [station_abs_pbias_df.loc[i, station_winner.loc[i]] for i in gdf.index], index=gdf.index)
-    return summary, station_winner, station_winner_abs_pbias
+def draw_stations(ax, st, codes, by_error=False):
+    """Marker shape = winning product; color = product color, or |PBIAS| class if `by_error`."""
+    for code in codes:
+        sub = st[st['winner'] == code]
+        if sub.empty:
+            continue
+        color = PBIAS_CMAP(PBIAS_NORM(sub['err'])) if by_error else PRODUCT_COLORS[code]
+        ax.scatter(sub.geometry.x, sub.geometry.y, marker=PRODUCT_MARKERS[code], c=color,
+                   s=45, edgecolors='black', linewidths=0.6, zorder=5)
 
 
-def draw_maps(fig, gs_r, gs_pbias, product_codes, summary, station_winner, station_winner_abs_pbias,
-             bias_bins, bias_labels, title_r, title_pbias):
-    n_classes = len(bias_bins) - 1
-    uh_plot = uh.merge(summary, left_on='UH_NAME', right_index=True, how='inner')
-    uh_plot_web = uh_plot.to_crs(epsg=3857)
-    uh_no_data_web = uh_all_web[~uh_all_web['UH_NAME'].isin(uh_plot_web['UH_NAME'])]
-    sw = stations_web.copy()
-    sw['station_winner'] = station_winner.values
-    sw['station_winner_abs_pbias'] = station_winner_abs_pbias.values
-
-    # --- (r) winner map ---
-    ax = fig.add_subplot(gs_r)
-    uh_all_web.boundary.plot(ax=ax, color='gray', linewidth=0.8, zorder=1)
-    if len(uh_no_data_web) > 0:
-        uh_no_data_web.plot(ax=ax, facecolor='none', edgecolor='gray', hatch='///', linewidth=0.8, alpha=0.6, zorder=1)
-    for code in product_codes:
-        mask = uh_plot_web['winner'] == DISPLAY_NAMES[code]
-        if mask.any():
-            uh_plot_web[mask].plot(ax=ax, color=PRODUCT_COLORS[code], alpha=0.35, edgecolor='black', linewidth=0.8, zorder=2)
-    for code in product_codes:
-        mask = sw['station_winner'] == code
-        sub = sw[mask]
-        if len(sub) > 0:
-            ax.scatter(sub.geometry.x, sub.geometry.y, color=PRODUCT_COLORS[code], marker=PRODUCT_MARKERS[code],
-                      s=60, edgecolor='black', linewidth=0.5, zorder=5)
-    place_all_labels(ax, uh_plot_web, station_points_list, lambda row: row['UH_NAME'], fontsize=11)
-    if SHOW_COORD_BOX:
-        apply_coord_box(ax)
-    else:
-        ax.set_axis_off()
-    if HAVE_CONTEXTILY:
-        try:
-            cx.add_basemap(ax, source=cx.providers.CartoDB.Positron, zoom=8)
-        except Exception:
-            pass
-    ax.set_title(title_r, fontsize=16)
-    handles = [mpatches.Patch(color=PRODUCT_COLORS[c], label=DISPLAY_NAMES[c], alpha=0.6) for c in product_codes]
-    handles.append(mpatches.Patch(facecolor='none', edgecolor='gray', hatch='///', label='No station coverage'))
-    ax.legend(handles=handles, loc='lower left', frameon=True, framealpha=0.9, fontsize=12, title='r winner', title_fontsize=12)
-
-    divider_r = make_axes_locatable(ax)
-    cax_r = divider_r.append_axes('right', size='4%', pad=0.15)
-    cax_r.axis('off')
-
-    # --- |PBIAS| map (discrete classes, sequential colormap) ---
-    ax = fig.add_subplot(gs_pbias)
-    uh_all_web.boundary.plot(ax=ax, color='gray', linewidth=0.8, zorder=1)
-    if len(uh_no_data_web) > 0:
-        uh_no_data_web.plot(ax=ax, facecolor='none', edgecolor='gray', hatch='///', linewidth=0.8, alpha=0.6, zorder=1)
-    cmap = plt.colormaps['YlOrRd'].resampled(n_classes + 1)  # +1: only 'max' extend needed (|PBIAS| >= 0)
-    class_norm = mcolors.BoundaryNorm(bias_bins, cmap.N, extend='max')
-    uh_plot_web.plot(ax=ax, column='winner_abs_pbias', cmap=cmap, norm=class_norm, edgecolor='black', linewidth=0.8, zorder=2)
-    for code in product_codes:
-        mask = sw['station_winner'] == code
-        sub = sw[mask]
-        if len(sub) > 0:
-            ax.scatter(sub.geometry.x, sub.geometry.y, c=sub['station_winner_abs_pbias'], cmap=cmap, norm=class_norm,
-                      marker=PRODUCT_MARKERS[code], s=90, edgecolor='black', linewidth=0.8, zorder=5)
-    place_all_labels(ax, uh_plot_web, station_points_list,
-                    lambda row: f"{row['UH_NAME']}\n|PBIAS|={row['winner_abs_pbias']:.1f}%", fontsize=10)
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=class_norm)
-    sm.set_array([])
-    bin_centers = [(bias_bins[i] + bias_bins[i + 1]) / 2 for i in range(n_classes)]
-    divider_pbias = make_axes_locatable(ax)
-    cax_pbias = divider_pbias.append_axes('right', size='4%', pad=0.15)
-    cbar = fig.colorbar(sm, cax=cax_pbias, extend='max')
-    cbar.set_ticks(bin_centers)
-    cbar.set_ticklabels(bias_labels, fontsize=9)
-    cbar.set_label('|PBIAS| class (%)', fontsize=11)
-    if SHOW_COORD_BOX:
-        apply_coord_box(ax)
-    else:
-        ax.set_axis_off()
-    if HAVE_CONTEXTILY:
-        try:
-            cx.add_basemap(ax, source=cx.providers.CartoDB.Positron, zoom=8)
-        except Exception:
-            pass
-    ax.set_title(title_pbias, fontsize=16)
-    shape_handles = [plt.Line2D([0], [0], marker=PRODUCT_MARKERS[c], color='w', markerfacecolor='lightgray',
-                    markeredgecolor='black', markersize=9, label=DISPLAY_NAMES[c]) for c in product_codes]
-    shape_handles.append(mpatches.Patch(facecolor='none', edgecolor='gray', hatch='///', label='No station coverage'))
-    ax.legend(handles=shape_handles, loc='lower left', frameon=True, framealpha=0.9, fontsize=12,
-             title='Station winner (shape)', title_fontsize=12)
+def label_basins(ax, texts):
+    for _, row in uhs[uhs['basin'].isin(texts.keys())].iterrows():
+        pt = row.geometry.representative_point()
+        ax.annotate(texts[row['basin']], (pt.x, pt.y), xytext=LABEL_POS[row['basin']],
+                    textcoords='axes fraction', ha='center', va='center',
+                    fontsize=map_fontsize, fontweight='bold', zorder=6, annotation_clip=False,
+                    bbox={'boxstyle': 'round,pad=0.2', 'facecolor': 'white', 'edgecolor': 'grey', 'alpha': 0.85},
+                    arrowprops={'arrowstyle': '-', 'color': 'black', 'linewidth': 0.7, 'shrinkA': 0, 'shrinkB': 0})
+        ax.plot(pt.x, pt.y, marker='o', markersize=3, color='black', zorder=6)
 
 
-# =============================================================================
-# 3. Build data for both rows
-# =============================================================================
-summary_full, station_winner_full, station_winner_abs_pbias_full = build_summary(PLOT_ORDER)
-print("--- Full comparison (5 products): per-UH r-winner and its |PBIAS| ---")
-print(summary_full.round(3).to_string())
-print(f"\nFull-comparison winner |PBIAS| range: {summary_full['winner_abs_pbias'].min():.2f} to "
-      f"{summary_full['winner_abs_pbias'].max():.2f}% -> check bias_bins_full below matches this")
-print(f"Full-comparison station-level winner |PBIAS| range: "
-      f"{station_winner_abs_pbias_full.min():.2f} to {station_winner_abs_pbias_full.max():.2f}%")
+def winner_handles(codes, filled, coverage):
+    """Legend handles: one marker per product, plus the hatched no-coverage patch if `coverage`."""
+    return [Line2D([], [], marker=PRODUCT_MARKERS[code], linestyle='none', markersize=8,
+                   markerfacecolor=PRODUCT_COLORS[code] if filled else 'white',
+                   markeredgecolor='black', label=DISPLAY_NAMES[code])
+            for code in codes] + ([no_coverage_patch] if coverage else [])
 
-summary_gpm, station_winner_gpm, station_winner_abs_pbias_gpm = build_summary(GPM_FAMILY)
-print("\n--- GPM-family-only: per-UH r-winner and its |PBIAS| ---")
-print(summary_gpm.round(3).to_string())
-print(f"\nGPM-family winner |PBIAS| range: {summary_gpm['winner_abs_pbias'].min():.2f} to "
-      f"{summary_gpm['winner_abs_pbias'].max():.2f}% -> check bias_bins_gpm below matches this")
-print(f"GPM-family station-level winner |PBIAS| range: "
-      f"{station_winner_abs_pbias_gpm.min():.2f} to {station_winner_abs_pbias_gpm.max():.2f}%")
 
-# =============================================================================
-# 4. |PBIAS| bins - PLACEHOLDER, retune against the printed ranges above.
-#    Sequential (0 = best), so only the TOP end needs an "extend" arrow.
-# =============================================================================
-bias_bins_full = [0, 5, 10, 20, 35, 50, 100]
-bias_labels_full = ['0-5%\nExcellent', '5-10%\nGood', '10-20%\nFair', '20-35%\nPoor', '35-50%\nBad', '>50%\nVery bad']
+def add_north_arrow_and_scale(ax, x=0.75, y=0.80, length_km=100):
+    """QGIS-style north arrow (half black / half white) above a scale bar, both centered on
+    (x, y) in axes fraction."""
+    # Arrow drawn in inches from its base point, so its shape is independent of the map aspect
+    trans = ax.figure.dpi_scale_trans + mtransforms.ScaledTranslation(x, y + 0.01, ax.transAxes)
+    h, w, notch = 0.5, 0.15, 0.12
+    tip, left, mid, right = (0, h), (-w, 0), (0, notch), (w, 0)
+    ax.add_patch(mpatches.Polygon([tip, left, mid], closed=True, facecolor='black', edgecolor='black',
+                                  linewidth=1, transform=trans, zorder=7))
+    ax.add_patch(mpatches.Polygon([tip, mid, right], closed=True, facecolor='white', edgecolor='black',
+                                  linewidth=1, transform=trans, zorder=7))
+    ax.text(0, h + 0.05, 'N', transform=trans, ha='center', va='bottom',
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold', zorder=7)
 
-bias_bins_gpm = [0, 10, 20, 35, 50, 75, 150]
-bias_labels_gpm = ['0-10%\nExcellent', '10-20%\nGood', '20-35%\nFair', '35-50%\nPoor', '50-75%\nBad', '>75%\nVery bad']
+    # Data is in lon/lat: convert km to degrees of longitude at the map's mid-latitude
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    dx = length_km / (111.32 * np.cos(np.radians((y0 + y1) / 2)))
+    xc = x0 + x * (x1 - x0)
+    ys = y0 + (y - 0.05) * (y1 - y0)
+    ax.plot([xc - dx / 2, xc + dx / 2], [ys, ys], color='black', linewidth=3, solid_capstyle='butt')
+    ax.text(xc, ys + 0.01 * (y1 - y0), f'{length_km} km', ha='center', va='bottom',
+            fontsize=map_fontsize)
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
 
-# =============================================================================
-# 5. Combined figure: 1 row x 4 cols of MAPS
-# =============================================================================
-fig = plt.figure(figsize=(34, 11))
-gs = fig.add_gridspec(1, 4, wspace=0.15)
 
-draw_maps(fig, gs[0, 0], gs[0, 1], PLOT_ORDER, summary_full, station_winner_full, station_winner_abs_pbias_full,
-         bias_bins_full, bias_labels_full,
-         '(a) Best-performing product by r - full comparison',
-         '(b) |PBIAS| of the r-winning product - full comparison')
+# --------------
+# Figure 5 -> 1x4 winner maps: (a, b) all products, (c, d) GPM-based products only
+# --------------
 
-draw_maps(fig, gs[0, 2], gs[0, 3], GPM_FAMILY, summary_gpm, station_winner_gpm, station_winner_abs_pbias_gpm,
-         bias_bins_gpm, bias_labels_gpm,
-         '(c) Best-performing product by r - GPM family only',
-         '(d) |PBIAS| of the r-winning product - GPM family only')
+fig, axs = plt.subplots(1, 4, figsize=(22, 8))
 
-fig.suptitle('r winner and |PBIAS|: full comparison (left) vs. GPM family only (right)', fontsize=21, y=1.03)
+for pair, codes in enumerate([PLOT_ORDER, GPM_FAMILY]):
+    st, basin_winner, basin_err = basin_summary(codes)
+    basin_err = basin_err.dropna()
+    ax_w, ax_e = axs[2 * pair], axs[2 * pair + 1]
 
-out_path = os.path.join(out_dir, 'combined_uh_maps_r_pbias.png')
-plt.savefig(out_path, dpi=300, bbox_inches='tight')
-plt.show()
-print(f"\nSaved {out_path}")
+    # Winner panel: subbasin tinted by its winning product, stations by winning product
+    draw_basins(ax_w, {b: mcolors.to_rgba(PRODUCT_COLORS[code], 0.35) for b, code in basin_winner.items()})
+    draw_stations(ax_w, st, codes)
+    label_basins(ax_w, {b: b for b in basin_winner.index})
+    ax_w.legend(handles=winner_handles(codes, filled=True, coverage=True), title='Dataset with best r',
+                loc='lower left', frameon=True, framealpha=0.9)
+
+    # |PBIAS| panel: subbasin and stations colored by |PBIAS| class of the winner
+    draw_basins(ax_e, {b: mcolors.to_rgba(PBIAS_CMAP(PBIAS_NORM(v)), ERROR_FILL_ALPHA) for b, v in basin_err.items()})
+    draw_stations(ax_e, st, codes, by_error=True)
+    label_basins(ax_e, {b: f'{b}\n|PBIAS|={v:.1f}%' for b, v in basin_err.items()})
+    ax_e.legend(handles=winner_handles(codes, filled=False, coverage=False), title='Best dataset on station (shape)',
+                loc='lower left', frameon=True, framealpha=0.9)
+
+    cax = ax_e.inset_axes([1.0, 0.3, 0.035, 0.45])
+    cbar = fig.colorbar(ScalarMappable(norm=PBIAS_NORM, cmap=PBIAS_CMAP), cax=cax, extend='max')
+    cbar.set_ticks(PBIAS_BOUNDS)
+    cbar.set_label('|PBIAS| (%)')
+
+for i, ax in enumerate(axs):
+    ax.set_axis_off()
+    add_north_arrow_and_scale(ax)
+    ax.text(0.0, 1.0, panel_labels[i], transform=ax.transAxes, va='top',
+            fontsize=plt.rcParams['axes.labelsize'], fontweight='bold')
+
+fig.tight_layout(w_pad=4)     # extra horizontal space between panels
+fig.savefig(plotDir / 'fig5_winner_r_pbias.png', bbox_inches='tight')
+plt.close(fig)
