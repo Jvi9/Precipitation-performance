@@ -9,6 +9,16 @@ Description: Boxen plots of categorical (detection) statistics across all datase
              then successively narrower boxes halving the remaining tail
              (12.5th-87.5th, 6.25th-93.75th, ...) ("letter-value plot", Hofmann/Wickham/Kafadar 2011).
              CSI is derived from POD and FAR; FBI, FAR and POD are stored GeoParquet columns.
+
+Modified by: Jhon (added diagnostic printing block below CSI derivation -
+             no changes to the plotting logic itself) - prints median,
+             mean, std, IQR per product for CSI/FBI/FAR/POD, ranked by each
+             metric's own "better" direction (FBI ranked by |FBI-1|,
+             closest to unity = best, same treatment as PBIAS in Figure 4).
+             Checks every specific claim in the old paragraph: "Rain4PE
+             highest CSI, minimal variability", "PISCO lowest CSI",
+             "Rain4PE lowest FAR, PISCO highest FAR", "Rain4PE highest POD",
+             "PISCO and GPM-GWR concentrate near FBI=1".
 """
 
 
@@ -18,6 +28,7 @@ from pathlib import Path
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS
 
@@ -51,6 +62,9 @@ stat_labels = {
     'far': 'FAR',
     'pod': 'POD',
 }
+# Direction for ranking: True = higher is better, False = lower is better.
+# FBI is ranked by |FBI-1| (closest to unity), handled separately below.
+HIGHER_IS_BETTER = {'csi': True, 'far': False, 'pod': True}
 panel_labels = ['(a)', '(b)', '(c)', '(d)']
 
 # --------------
@@ -71,6 +85,67 @@ def metric_long(stat):
     cols = {f'{stat}_{code}': DISPLAY_NAMES[code] for code in PLOT_ORDER}
     return (metrics_df[list(cols)].rename(columns=cols)
             .melt(var_name='Dataset', value_name='Statistic'))
+
+
+# =============================================================================
+# DIAGNOSTIC PRINTING - median/mean/std/IQR per product per statistic, ranked
+# by each metric's own "better" direction.
+# =============================================================================
+
+print("="*95)
+print("DIAGNOSTIC: median, mean, std, IQR per product, for every detection statistic")
+print("Ranked by each metric's own 'better' direction (CSI, POD: higher better;")
+print("FAR: lower better; FBI: ranked separately by |FBI-1|, closest to unity = best)")
+print("="*95)
+
+summary_tables = {}
+for stat, label in stat_labels.items():
+    df_wide = metrics_df[[f'{stat}_{code}' for code in PLOT_ORDER]].rename(
+        columns={f'{stat}_{code}': DISPLAY_NAMES[code] for code in PLOT_ORDER})
+
+    summary = pd.DataFrame({
+        'median': df_wide.median(),
+        'mean': df_wide.mean(),
+        'std': df_wide.std(),
+        'Q1': df_wide.quantile(0.25),
+        'Q3': df_wide.quantile(0.75),
+    })
+    summary['IQR'] = summary['Q3'] - summary['Q1']
+
+    if stat == 'fbi':
+        summary['abs_dev_from_unity'] = (df_wide - 1).abs().median()
+        summary = summary.sort_values('abs_dev_from_unity')
+    else:
+        summary = summary.sort_values('median', ascending=not HIGHER_IS_BETTER[stat])
+
+    summary_tables[stat] = summary
+    print(f"\n--- {label} (ranked best to worst) ---")
+    print(summary.round(3).to_string())
+
+# =============================================================================
+# Explicit ranking + variability check
+# =============================================================================
+print("\n" + "="*95)
+print("RANKING SUMMARY (1st = best) and STD-based variability check")
+print("(old text claims: 'Rain4PE highest CSI with minimal variability',")
+print("'PISCO/GPM-GWR concentrate near FBI=1' - check std and |FBI-1| directly)")
+print("="*95)
+for stat, label in stat_labels.items():
+    summary = summary_tables[stat]
+    print(f"\n{label}:")
+    for rank, (product, row) in enumerate(summary.iterrows(), start=1):
+        print(f"  {rank}. {product:12s} median={row['median']:+.3f}  std={row['std']:.3f}  "
+              f"IQR={row['IQR']:.3f}")
+
+# FBI direction specifically (over- vs under-prediction), since the old
+# text claims Rain4PE is "elevated" (overpredicts) and PISCO/GWR "near unity"
+print("\n" + "="*95)
+print("FBI DIRECTION (over- vs under-prediction of event frequency), per product")
+print("="*95)
+fbi_summary = summary_tables['fbi']
+for product, row in fbi_summary.iterrows():
+    direction = 'overpredicts frequency' if row['median'] > 1 else 'underpredicts frequency' if row['median'] < 1 else 'unbiased'
+    print(f"  {product:12s} median FBI={row['median']:.3f}  -> {direction}")
 
 
 # --------------

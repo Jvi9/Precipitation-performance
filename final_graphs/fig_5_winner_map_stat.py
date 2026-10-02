@@ -8,6 +8,14 @@ Description: Winner maps with subbasin (UH) subdivision - continuous metrics
                (a) dataset with best r per station + dominant winner per subbasin
                (b) |PBIAS| of the winner (station and subbasin mean)
                (c), (d) same, restricted to GPM-based products
+
+Modified by: Jhon (added diagnostic printing block below `stations` - no
+             changes to the plotting logic itself) - prints everything
+             needed to check and rebuild the "Spatial patterns of
+             performance" section against the corrected data, including the
+             old paragraph's specific geographic claims (Rain4PE best
+             overall; PISCO weak in the south/east Andes-Amazon transition;
+             GPM-EXP/IMERGF worst in the north/central sectors).
 """
 
 
@@ -83,6 +91,110 @@ metrics_df = gpd.read_parquet(metrics_parquetFN)
 uhs = gpd.read_file(uhsFN).set_crs(metrics_df.crs, allow_override=True)
 uhs['basin'] = uhs['NOMB_UH_N5'].fillna(uhs['NOMB_UH_N4'])
 stations = metrics_df.sjoin(uhs[['basin', 'geometry']], how='left', predicate='within')
+
+# =============================================================================
+# DIAGNOSTIC PRINTING - everything needed to check/rebuild "Spatial patterns
+# of performance" against the corrected data. The OLD paragraph claimed:
+#   - Rain4PE strongest overall spatial performance (highest r, lowest bias)
+#   - PISCO: good magnitude/bias, but weak r specifically in the south/east
+#     (Andes-Amazon transition)
+#   - GPM-EXP/GPM-IMERGF worst overall, weak particularly in north/central
+# Given the Taylor diagram now shows PISCO (r=0.88) ahead of Rain4PE (r=0.81)
+# network-wide, every one of these claims needs to be checked at the
+# basin AND station level before the paragraph is rewritten.
+# =============================================================================
+
+def full_basin_table(codes, metric_prefix):
+    """Per-basin mean of f'{metric_prefix}_{code}' for every code. For
+    'pbias', returns the mean of the ABSOLUTE value (|PBIAS|), matching
+    the figure's own convention."""
+    covered = stations['basin'].dropna()
+    df = stations[[f'{metric_prefix}_{c}' for c in codes]].set_axis(codes, axis=1)
+    if metric_prefix == 'pbias':
+        df = df.abs()
+    by_basin = df.loc[covered.index].groupby(covered).mean()
+    return by_basin.rename(columns=DISPLAY_NAMES)
+
+
+print("="*95)
+print("DIAGNOSTIC 1: per-basin mean r, ALL 5 PRODUCTS")
+print("="*95)
+r_by_basin_full = full_basin_table(PLOT_ORDER, 'r')
+print(r_by_basin_full.round(3).to_string())
+
+winner_full = r_by_basin_full.idxmax(axis=1)
+margin_full = r_by_basin_full.apply(lambda row: sorted(row.values)[-1] - sorted(row.values)[-2], axis=1)
+runner_up_full = pd.Series(
+    [r_by_basin_full.columns[np.argsort(r_by_basin_full.loc[b].values)[-2]] for b in r_by_basin_full.index],
+    index=r_by_basin_full.index)
+print("\n--- Winner (by r) and margin over runner-up, per basin ---")
+for b in r_by_basin_full.index:
+    print(f"  {b:20s} winner={winner_full[b]:10s} r={r_by_basin_full.loc[b, winner_full[b]]:.3f}  "
+          f"runner_up={runner_up_full[b]:10s}  margin={margin_full[b]:.3f}")
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 2: per-basin mean |PBIAS| (%), ALL 5 PRODUCTS")
+print("(check 'Rain4PE: very low bias' and 'PISCO: good magnitude/bias' claims)")
+print("="*95)
+pbias_by_basin_full = full_basin_table(PLOT_ORDER, 'pbias')
+print(pbias_by_basin_full.round(2).to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 3: station-level r-winner counts, ALL 5 PRODUCTS")
+print("(how many stations, network-wide, does each product actually win on r)")
+print("="*95)
+r_df_full = stations[[f'r_{c}' for c in PLOT_ORDER]].set_axis(PLOT_ORDER, axis=1)
+station_winner_full = r_df_full.idxmax(axis=1).map(DISPLAY_NAMES)
+print(station_winner_full.value_counts().to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 4: PISCO's own r by basin, sorted ascending")
+print("(direct check of the old 'weak in south/east Andes-Amazon transition' claim -")
+print("Alto Huallaga, Pachitea, Perené are the eastern/Amazon-facing basins in this network)")
+print("="*95)
+print(r_by_basin_full['PISCO'].sort_values().round(3).to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 5: Rain4PE's own r and |PBIAS| by basin, sorted by r ascending")
+print("(direct check of the old 'strongest overall, very low bias across most stations' claim)")
+print("="*95)
+r4pe_table = pd.DataFrame({
+    'r': r_by_basin_full['Rain4PE'],
+    '|PBIAS|': pbias_by_basin_full['Rain4PE'],
+}).sort_values('r')
+print(r4pe_table.round(3).to_string())
+
+# --- Same diagnostics, restricted to the GPM family ---
+print("\n" + "="*95)
+print("DIAGNOSTIC 6: per-basin mean r, GPM FAMILY ONLY")
+print("="*95)
+r_by_basin_gpm = full_basin_table(GPM_FAMILY, 'r')
+print(r_by_basin_gpm.round(3).to_string())
+winner_gpm = r_by_basin_gpm.idxmax(axis=1)
+print("\n--- Winner (by r) per basin, GPM family only ---")
+print(winner_gpm.to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 7: per-basin mean |PBIAS| (%), GPM FAMILY ONLY")
+print("(check the old 'large, spatially inconsistent bias, frequent extremes")
+print("particularly in the eastern and southern areas' claim)")
+print("="*95)
+pbias_by_basin_gpm = full_basin_table(GPM_FAMILY, 'pbias')
+print(pbias_by_basin_gpm.round(2).to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 8: station-level r-winner counts, GPM FAMILY ONLY")
+print("="*95)
+r_df_gpm = stations[[f'r_{c}' for c in GPM_FAMILY]].set_axis(GPM_FAMILY, axis=1)
+station_winner_gpm = r_df_gpm.idxmax(axis=1).map(DISPLAY_NAMES)
+print(station_winner_gpm.value_counts().to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 9: GPM-EXP vs GPM-IMERGF |PBIAS|, per basin")
+print("(check the old 'GPM-EXP and GPM-IMERGF both large/inconsistent bias' claim -")
+print("are they actually similar, or does one differ from the other regionally)")
+print("="*95)
+print(pbias_by_basin_gpm[['GPM-EXP', 'GPM-IMERGF']].round(2).to_string())
 
 
 # --------------

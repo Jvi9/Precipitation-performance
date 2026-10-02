@@ -7,6 +7,13 @@ Description: Taylor diagram - GPM - NDVI ds datasets - PISCO - Rain4pe
              Figure 3 of manuscript.
              Daily series 2005-2018, standard deviation normalized by the observed one.
              Faint points = single stations, bold points = mean over stations.
+
+Modified by: Jhon (added diagnostic printing block below product_summary -
+             no changes to the plotting logic itself) - prints the numbers
+             needed to rewrite the "General performance of precipitation
+             datasets" section around what a Taylor diagram actually shows
+             (r + variability ratio combined), rather than the old
+             median/quartile-based violin narrative.
 """
 
 
@@ -142,6 +149,63 @@ taylor_stats_df = pd.DataFrame(rows)
 
 # One point per product getting mean across stations
 product_summary = (taylor_stats_df.groupby('product').agg(r=('r', 'mean'), std_ratio=('std_ratio', 'mean')).reindex(PLOT_ORDER))
+
+# =============================================================================
+# DIAGNOSTIC PRINTING - everything needed to rewrite "General performance of
+# precipitation datasets" around what the Taylor diagram actually shows:
+# correlation (temporal pattern agreement) + variability ratio (does the
+# product swing as much as reality), combined into one centered-RMSE-
+# equivalent distance from the observed reference point.
+# =============================================================================
+REF_STD = 1.0
+
+print("="*95)
+print("WHAT THIS DIAGRAM SHOWS, FOR THE TEXT:")
+print("r           = correlation with observed (temporal pattern / timing agreement)")
+print("std_ratio   = sim_std / obs_std (1.0 = correctly variable; <1 = too smooth/damped;")
+print("              >1 = too erratic/overshooting)")
+print("distance    = straight-line distance from the observed reference point in this")
+print("              normalized space - equivalent to centered RMSE, combines r AND")
+print("              std_ratio into one 'how close to perfect, overall' number")
+print("="*95)
+
+# Network-mean r and std_ratio, plus derived distance-from-reference (centered RMSE equivalent)
+product_summary['distance_from_reference'] = np.sqrt(
+    REF_STD**2 + product_summary['std_ratio']**2
+    - 2 * REF_STD * product_summary['std_ratio'] * product_summary['r']
+)
+product_summary_sorted = product_summary.sort_values('distance_from_reference')
+
+print("\n--- NETWORK-MEAN SUMMARY, ranked best (closest to reference) to worst ---")
+for prod in product_summary_sorted.index:
+    row = product_summary_sorted.loc[prod]
+    print(f"  {DISPLAY_NAMES[prod]:12s} r={row['r']:.3f}  std_ratio={row['std_ratio']:.3f}  "
+          f"distance_from_reference={row['distance_from_reference']:.3f}")
+
+# Station-level spread per product - how CONSISTENT is each product across
+# the network, not just its average position (ties to your established
+# "substantial variability across stations" phrasing)
+print("\n--- STATION-LEVEL CONSISTENCY (std across stations - lower = more consistent) ---")
+station_spread = taylor_stats_df.groupby('product')[['r', 'std_ratio']].std().reindex(PLOT_ORDER)
+for prod in PLOT_ORDER:
+    row = station_spread.loc[prod]
+    print(f"  {DISPLAY_NAMES[prod]:12s} std(r) across stations={row['r']:.3f}  "
+          f"std(std_ratio) across stations={row['std_ratio']:.3f}")
+
+# How many stations is each product "too smooth" (std_ratio < 1) vs
+# "too erratic" (std_ratio > 1) - direct, countable evidence for damped vs
+# overshooting variability claims
+print("\n--- DAMPED (std_ratio<1) vs OVERSHOOTING (std_ratio>1) variability, station counts ---")
+for prod in PLOT_ORDER:
+    sub = taylor_stats_df[taylor_stats_df['product'] == prod]
+    n_damped = (sub['std_ratio'] < 1).sum()
+    n_over = (sub['std_ratio'] > 1).sum()
+    n_total = len(sub)
+    print(f"  {DISPLAY_NAMES[prod]:12s} damped: {n_damped}/{n_total} ({n_damped/n_total:.0%})   "
+          f"overshooting: {n_over}/{n_total} ({n_over/n_total:.0%})")
+
+print("\n--- Full per-product table (network means) ---")
+print(product_summary_sorted.round(3).to_string())
 
 # --------------
 # Figure 3 -> Instead of violin plot, taylor diagram.

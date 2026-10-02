@@ -8,6 +8,15 @@ Description: Categorical (detection) statistics vs station elevation
              Points = individual stations, lines = LOESS trend per product,
              boxed values = Spearman rho (* = p < 0.05).
              CSI is derived from POD and FAR.
+
+Modified by: Jhon (added diagnostic printing block below CSI derivation -
+             no changes to the plotting logic itself) - same structure as
+             fig_8_elevation.py's diagnostic block: explanation of rho/p-
+             value, the full per-product-per-metric table, and a synthesis
+             of which products/metrics show a real (significant) elevation
+             dependence. No band-based claims (the old paragraph's "2000-
+             3500m trade-off" framing is not being tested or rebutted - it's
+             being replaced entirely by this rho-based evidence).
 """
 
 
@@ -17,6 +26,7 @@ from pathlib import Path
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from configurations import DISPLAY_NAMES, PLOT_ORDER, PRODUCT_COLORS
 from matplotlib.lines import Line2D
 from scipy.stats import spearmanr
@@ -117,6 +127,97 @@ for code in PLOT_ORDER:
     pod, far = metrics_df[f'pod_{code}'], metrics_df[f'far_{code}']
     with np.errstate(divide='ignore', invalid='ignore'):
         metrics_df[f'csi_{code}'] = 1 / (1 / pod + 1 / (1 - far) - 1)
+
+# =============================================================================
+# DIAGNOSTIC PRINTING - rho-based evidence only (same structure as
+# fig_8_elevation.py). No band-based claims are tested - this is the full
+# evidence base for a section rewritten from scratch.
+# =============================================================================
+
+print("="*95)
+print("WHAT THESE NUMBERS MEAN")
+print("="*95)
+print("Spearman rho: -1 to +1, measures whether a metric consistently rises or falls")
+print("with elevation (rank-based - doesn't assume a straight-line relationship).")
+print("  |rho| < 0.3  -> weak")
+print("  0.3 - 0.5    -> moderate")
+print("  > 0.5        -> strong")
+print("p-value: given n=70 stations, how likely is a correlation this large to appear")
+print("by chance if there were truly NO relationship. p < 0.05 (marked *) = unlikely to")
+print("be noise. A high rho with NO * is a pattern that should be treated with caution,")
+print("not reported as if it were established.")
+print("="*95)
+
+results = []
+for metric, ylabel, _ in panel_specs:
+    for code in PLOT_ORDER:
+        x = metrics_df['alt'].to_numpy()
+        y = metrics_df[f'{metric}_{code}'].to_numpy()
+        mask = np.isfinite(x) & np.isfinite(y)
+        rho, pval = spearmanr(x[mask], y[mask])
+        strength = 'weak' if abs(rho) < 0.3 else ('moderate' if abs(rho) < 0.5 else 'strong')
+        sig = pval < 0.05
+        results.append({'metric': metric.upper(), 'product': DISPLAY_NAMES[code],
+                        'rho': rho, 'pval': pval, 'strength': strength, 'significant': sig})
+
+results_df = pd.DataFrame(results)
+
+print("\n--- FULL TABLE: rho and significance, every product, every metric ---")
+for metric in results_df['metric'].unique():
+    print(f"\n{metric} vs elevation:")
+    sub = results_df[results_df['metric'] == metric]
+    for _, row in sub.iterrows():
+        direction = 'increases' if row['rho'] > 0 else 'decreases'
+        sig_text = 'significant' if row['significant'] else 'NOT significant'
+        print(f"  {row['product']:12s} rho={row['rho']:+.3f}  {row['strength']:8s}  "
+              f"{direction} with elevation  - {sig_text}")
+
+# =============================================================================
+# SYNTHESIS: which metrics show a real (significant) elevation dependence
+# across MOST/ALL products, versus which products show a real dependence
+# across MOST/ALL metrics.
+# =============================================================================
+print("\n" + "="*95)
+print("SYNTHESIS 1: per METRIC, how many of the 5 products show a significant")
+print("relationship with elevation (tells you if a metric is universally")
+print("elevation-sensitive, or only for specific products)")
+print("="*95)
+for metric in results_df['metric'].unique():
+    sub = results_df[results_df['metric'] == metric]
+    n_sig = sub['significant'].sum()
+    print(f"  {metric:6s}: {n_sig}/5 products significant  "
+          f"({', '.join(sub[sub['significant']]['product'].tolist()) or 'none'})")
+
+print("\n" + "="*95)
+print("SYNTHESIS 2: per PRODUCT, how many of the 4 metrics show a significant")
+print("relationship with elevation (tells you which products have a coherent,")
+print("multi-metric elevation story, versus which show no real pattern at all)")
+print("="*95)
+for code in PLOT_ORDER:
+    sub = results_df[results_df['product'] == DISPLAY_NAMES[code]]
+    n_sig = sub['significant'].sum()
+    sig_metrics = sub[sub['significant']]['metric'].tolist()
+    print(f"  {DISPLAY_NAMES[code]:12s}: {n_sig}/4 metrics significant  "
+          f"({', '.join(sig_metrics) or 'none'})")
+
+# =============================================================================
+# SYNTHESIS 3: GPM FAMILY ONLY - since the accompanying text specifically
+# discusses GPM-IMERGF, GPM-GWR, and GPM-EXP relative to each other
+# =============================================================================
+GPM_FAMILY_DISPLAY = [DISPLAY_NAMES[c] for c in ['rawGPM', 'gwrGPM', 'expGPM']]
+print("\n" + "="*95)
+print("SYNTHESIS 3: GPM FAMILY ONLY - full rho table, for the text comparing")
+print("GPM-IMERGF, GPM-GWR, and GPM-EXP specifically")
+print("="*95)
+gpm_results = results_df[results_df['product'].isin(GPM_FAMILY_DISPLAY)]
+for metric in panel_specs:
+    m = metric[0].upper()
+    sub = gpm_results[gpm_results['metric'] == m]
+    print(f"\n{m}:")
+    for _, row in sub.iterrows():
+        sig_text = 'significant' if row['significant'] else 'NOT significant'
+        print(f"  {row['product']:12s} rho={row['rho']:+.3f}  {row['strength']:8s}  - {sig_text}")
+
 
 # --------------
 # Figure 9 -> 2x2 metrics vs elevation

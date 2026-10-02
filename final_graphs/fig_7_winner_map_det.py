@@ -9,6 +9,20 @@ Description: Winner maps with subbasin (UH) subdivision - categorical (detection
                (b) FBI of the winner (station and subbasin mean)
                (c), (d) same, restricted to GPM-based products
              CSI is derived from POD and FAR.
+
+Modified by: Jhon (added diagnostic printing block below `stations` - no
+             changes to the plotting logic itself) - prints everything
+             needed to check and rebuild "Forecasting indices and detection
+             trade-offs across datasets" against the corrected data. The
+             OLD paragraph claimed:
+               - Rain4PE AND PISCO both: high CSI, FBI close to unity
+               - GPM-GWR: localized CSI improvement, moderates FBI toward
+                 unity, "advantage of incorporating terrain information"
+               - GPM-EXP: uneven CSI, FBI "well above unity" (overestimation)
+             Given the network-mean FBI values already found this session
+             (Rain4PE=1.178 overestimating, PISCO=0.938 near-unity,
+             GPM-EXP=0.831 UNDERestimating, not "well above unity"), several
+             of these claims are suspect before even checking basin-level detail.
 """
 
 
@@ -91,6 +105,103 @@ for code in PLOT_ORDER:
 uhs = gpd.read_file(uhsFN).set_crs(metrics_df.crs, allow_override=True)
 uhs['basin'] = uhs['NOMB_UH_N5'].fillna(uhs['NOMB_UH_N4'])
 stations = metrics_df.sjoin(uhs[['basin', 'geometry']], how='left', predicate='within')
+
+# =============================================================================
+# DIAGNOSTIC PRINTING - everything needed to check/rebuild "Forecasting
+# indices and detection trade-offs across datasets" against the corrected
+# data. Checks, specifically:
+#   - Rain4PE AND PISCO: "consistently high CSI" + "balanced FBI close to
+#     unity" for BOTH - printed per-basin FBI for each shows whether this
+#     holds for both or just one
+#   - GPM-GWR: "localized improvement in CSI" + "moderating FBI towards
+#     unity" relative to GPM-IMERGF/EXP
+#   - GPM-EXP: "FBI well above unity" (overestimation) - network-mean FBI
+#     was already found to be 0.831 (UNDERestimation) earlier this session,
+#     so this claim is checked directly, basin by basin
+# =============================================================================
+
+def full_basin_table(codes, metric_prefix):
+    """Per-basin mean of f'{metric_prefix}_{code}' for every code."""
+    covered = stations['basin'].dropna()
+    df = stations[[f'{metric_prefix}_{c}' for c in codes]].set_axis(codes, axis=1)
+    by_basin = df.loc[covered.index].groupby(covered).mean()
+    return by_basin.rename(columns=DISPLAY_NAMES)
+
+
+print("="*95)
+print("DIAGNOSTIC 1: per-basin mean CSI, ALL 5 PRODUCTS")
+print("="*95)
+csi_by_basin_full = full_basin_table(PLOT_ORDER, 'csi')
+print(csi_by_basin_full.round(3).to_string())
+
+winner_full = csi_by_basin_full.idxmax(axis=1)
+margin_full = csi_by_basin_full.apply(lambda row: sorted(row.values)[-1] - sorted(row.values)[-2], axis=1)
+runner_up_full = pd.Series(
+    [csi_by_basin_full.columns[np.argsort(csi_by_basin_full.loc[b].values)[-2]] for b in csi_by_basin_full.index],
+    index=csi_by_basin_full.index)
+print("\n--- Winner (by CSI) and margin over runner-up, per basin ---")
+for b in csi_by_basin_full.index:
+    print(f"  {b:20s} winner={winner_full[b]:10s} CSI={csi_by_basin_full.loc[b, winner_full[b]]:.3f}  "
+          f"runner_up={runner_up_full[b]:10s}  margin={margin_full[b]:.3f}")
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 2: per-basin mean FBI, ALL 5 PRODUCTS")
+print("(check 'Rain4PE AND PISCO both balanced FBI close to unity' claim -")
+print("does this hold for BOTH, or just one of them, in every basin?)")
+print("="*95)
+fbi_by_basin_full = full_basin_table(PLOT_ORDER, 'fbi')
+print(fbi_by_basin_full.round(3).to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 3: station-level CSI-winner counts, ALL 5 PRODUCTS")
+print("="*95)
+csi_df_full = stations[[f'csi_{c}' for c in PLOT_ORDER]].set_axis(PLOT_ORDER, axis=1)
+station_winner_full = csi_df_full.idxmax(axis=1).map(DISPLAY_NAMES)
+print(station_winner_full.value_counts().to_string())
+
+# --- Same diagnostics, restricted to the GPM family ---
+print("\n" + "="*95)
+print("DIAGNOSTIC 4: per-basin mean CSI, GPM FAMILY ONLY")
+print("(check 'GPM-GWR showed localized improvement in CSI' claim - does GWR")
+print("actually win any basin among the GPM family, and by how much?)")
+print("="*95)
+csi_by_basin_gpm = full_basin_table(GPM_FAMILY, 'csi')
+print(csi_by_basin_gpm.round(3).to_string())
+winner_gpm = csi_by_basin_gpm.idxmax(axis=1)
+margin_gpm = csi_by_basin_gpm.apply(lambda row: sorted(row.values)[-1] - sorted(row.values)[-2], axis=1)
+print("\n--- Winner (by CSI) and margin, per basin, GPM family only ---")
+for b in csi_by_basin_gpm.index:
+    print(f"  {b:20s} winner={winner_gpm[b]:12s} CSI={csi_by_basin_gpm.loc[b, winner_gpm[b]]:.3f}  "
+          f"margin_over_runner_up={margin_gpm[b]:.3f}")
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 5: per-basin mean FBI, GPM FAMILY ONLY")
+print("(direct check of 'GPM-GWR moderates FBI towards unity' AND 'GPM-EXP FBI")
+print("well above unity' claims - both tested basin by basin here)")
+print("="*95)
+fbi_by_basin_gpm = full_basin_table(GPM_FAMILY, 'fbi')
+print(fbi_by_basin_gpm.round(3).to_string())
+
+print("\n--- GPM-EXP's FBI specifically, sorted descending (checking 'well above unity') ---")
+print(fbi_by_basin_gpm['GPM-EXP'].sort_values(ascending=False).round(3).to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 6: station-level CSI-winner counts, GPM FAMILY ONLY")
+print("="*95)
+csi_df_gpm = stations[[f'csi_{c}' for c in GPM_FAMILY]].set_axis(GPM_FAMILY, axis=1)
+station_winner_gpm = csi_df_gpm.idxmax(axis=1).map(DISPLAY_NAMES)
+print(station_winner_gpm.value_counts().to_string())
+
+print("\n" + "="*95)
+print("DIAGNOSTIC 7: |FBI - 1| (distance from unity) per basin, ALL 5 PRODUCTS")
+print("(the most direct test of 'balanced/close to unity' - ranks who is")
+print("ACTUALLY closest to unbiased detection frequency, basin by basin)")
+print("="*95)
+dist_from_unity = (fbi_by_basin_full - 1).abs()
+print(dist_from_unity.round(3).to_string())
+closest_to_unity = dist_from_unity.idxmin(axis=1)
+print("\n--- Closest-to-unity-FBI product per basin ---")
+print(closest_to_unity.to_string())
 
 
 # --------------
